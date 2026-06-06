@@ -1,0 +1,33 @@
+{
+  "_comment": "Curated reputation signals used by the agent-router skill (step 3). Add entries as you learn which tools are reliable. score: 0-100. Unknown tools default to 10.",
+  "tools": [
+    {
+      "name": "code-reviewer",
+      "type": "agent",
+      "score": 80,
+      "source": "builtin",
+      "notes": "Solid general code review; prefer language-specific reviewers when available."
+    },
+    {
+      "name": "python-reviewer",
+      "type": "agent",
+      "score": 85,
+      "source": "builtin",
+      "notes": "Specialist Python review; beats the generic reviewer for .py."
+    },
+    {
+      "name": "security-reviewer",
+      "type": "agent",
+      "score": 85,
+      "source": "builtin",
+      "notes": "Use for auth, input handling, secrets, OWASP."
+    },
+    {
+      "name": "test-coverage",
+      "type": "skill",
+      "score": 75,
+      "source": "builtin",
+      "notes": "Use to assess and raise test coverage."
+    }
+  ]
+}

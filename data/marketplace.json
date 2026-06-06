@@ -1,0 +1,17 @@
+{
+  "_comment": "Curated catalog for the skill-finder skill. Used to recommend plugins/skills/agents the user has NOT installed yet, ranked by rating. RULES: (1) Add ONLY real, installable entries you have verified — never invent repos or star counts. (2) `rating` is 0-100, normally derived from GitHub stars at `rated_on`; refresh via live search. (3) `install` must be the exact command(s) a user runs. The skill-finder skill treats this file as an overlay on top of live web/GitHub search results, so it stays useful even while sparse.",
+  "rated_on": "2026-06-05",
+  "rating_basis": "github_stars_or_curated",
+  "plugins": [
+    {
+      "name": "agent-router",
+      "type": "plugin",
+      "category": "orchestration",
+      "description": "Discovers installed skills/agents and routes any task to the best one; ships skill-finder for discovering new ones.",
+      "rating": 70,
+      "source": "github:RamanaNani/agent-router",
+      "install": "/plugin marketplace add RamanaNani/agent-router\n/plugin install agent-router@agent-router",
+      "tags": ["router", "orchestration", "discovery", "meta"]
+    }
+  ]
+}

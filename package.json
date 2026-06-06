@@ -1,0 +1,40 @@
+{
+  "name": "agent-router",
+  "version": "0.1.0",
+  "description": "A Claude Code skill + agent that discovers every installed skill and subagent, ranks them for the task at hand, and routes to the best one.",
+  "publishConfig": { "access": "public" },
+  "bin": {
+    "agent-router": "scripts/install.js"
+  },
+  "files": [
+    "skills/",
+    "agents/",
+    ".claude-plugin/",
+    "data/",
+    "scripts/install.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "postinstall": "echo '\\n  agent-router installed. Run: npx agent-router\\n'"
+  },
+  "keywords": [
+    "claude-code",
+    "agents",
+    "skills",
+    "router",
+    "orchestration",
+    "subagent",
+    "dispatch"
+  ],
+  "author": {
+    "name": "Ramana Reddy",
+    "email": "ramanareddy1098@outlook.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RamanaNani/agent-router.git"
+  },
+  "homepage": "https://github.com/RamanaNani/agent-router#readme"
+}

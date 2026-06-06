@@ -1,0 +1,29 @@
+{
+  "name": "agent-router",
+  "owner": {
+    "name": "Ramana Reddy",
+    "email": "ramanareddy1098@outlook.com"
+  },
+  "metadata": {
+    "description": "A meta-router that picks the best installed skill/agent for any task."
+  },
+  "plugins": [
+    {
+      "name": "agent-router",
+      "source": "./",
+      "description": "Discovers every installed skill and subagent, ranks them for the task at hand, and routes to the best one.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Ramana Reddy",
+        "email": "ramanareddy1098@outlook.com"
+      },
+      "homepage": "https://github.com/RamanaNani/agent-router",
+      "repository": "https://github.com/RamanaNani/agent-router",
+      "license": "MIT",
+      "category": "workflow",
+      "keywords": ["agents", "skills", "router", "orchestration", "dispatch"],
+      "tags": ["router", "orchestration", "skills", "agents"],
+      "strict": false
+    }
+  ]
+}

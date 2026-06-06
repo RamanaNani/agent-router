@@ -1,0 +1,16 @@
+{
+  "name": "agent-router",
+  "version": "0.1.0",
+  "description": "Discovers every installed skill and subagent, ranks them for the task at hand, and routes to the best one.",
+  "author": {
+    "name": "Ramana Reddy",
+    "email": "ramanareddy1098@outlook.com"
+  },
+  "homepage": "https://github.com/RamanaNani/agent-router",
+  "repository": "https://github.com/RamanaNani/agent-router",
+  "license": "MIT",
+  "keywords": ["agents", "skills", "router", "orchestration", "dispatch"],
+  "mcpServers": {},
+  "skills": ["./skills/"],
+  "agents": ["./agents/"]
+}
