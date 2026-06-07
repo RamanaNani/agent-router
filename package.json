@@ -1,22 +1,23 @@
 {
-  "name": "agent-router",
+  "name": "claude-agent-router",
   "version": "0.1.0",
   "description": "A Claude Code skill + agent that discovers every installed skill and subagent, ranks them for the task at hand, and routes to the best one.",
   "publishConfig": { "access": "public" },
   "bin": {
-    "agent-router": "scripts/install.js"
+    "claude-agent-router": "scripts/install.js"
   },
   "files": [
     "skills/",
     "agents/",
     ".claude-plugin/",
     "data/",
-    "scripts/install.js",
+    "scripts/",
+    "workflows/",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "postinstall": "echo '\\n  agent-router installed. Run: npx agent-router\\n'"
+    "postinstall": "echo '\\n  claude-agent-router installed. Run: npx claude-agent-router\\n'"
   },
   "keywords": [
     "claude-code",

@@ -60,6 +60,15 @@ Installing plugins is done by the USER via `/plugin …` — you cannot run thos
 slash commands for them. Lay out the 1-2 commands and offer to walk through it.
 If the pick is an `npx` installer, you may run it via Bash once the user confirms.
 
+### 7. Log the discovery (internal dogfooding)
+Append ONE JSONL line so gaps in the installed toolset are tracked over time:
+```bash
+mkdir -p ~/.claude/agent-router/logs
+echo '{"ts":"'"$(date -u +%FT%TZ)"'","skill":"skill-finder","need":"<one-line need>","domain":"<domain>","recommended":"<name|->","source":"<url|->","rating":"<stars|score|->","installed":false,"feedback":""}' >> ~/.claude/agent-router/logs/decisions.jsonl
+```
+Set `installed` to true once the user installs it. These rows reveal which
+capabilities the user repeatedly needs but doesn't have — the roadmap.
+
 ## Rules
 - Honesty over coverage: a short list of real, linked tools beats a long invented one.
 - Always show the source URL and the install command — discovery is useless without them.

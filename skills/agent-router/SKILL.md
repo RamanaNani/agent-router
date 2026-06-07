@@ -57,6 +57,18 @@ state WHY the top pick won and what the runner-up would be better at.
 - If nothing scores ≥ 25, say so plainly. Then offer `/skill-finder` to browse the
   marketplace for a specialist to install — do NOT invent one that doesn't exist.
 
+### 6. Log the decision (internal dogfooding)
+After every routing decision, append ONE JSONL line to your decision log so you
+can review and improve routing over time:
+```bash
+mkdir -p ~/.claude/agent-router/logs
+echo '{"ts":"'"$(date -u +%FT%TZ)"'","skill":"agent-router","task":"<one-line task>","domain":"<domain>","chosen":"<name>","chosen_score":<0-100>,"runner_up":"<name|->","action":"<recommended|dispatched|none>","outcome":"","feedback":""}' >> ~/.claude/agent-router/logs/decisions.jsonl
+```
+Fill the placeholders; leave `outcome`/`feedback` empty (annotate later, or when the
+user says the pick was wrong). Misroutes and `"action":"none"` rows are the highest-
+value signals — they show which `data/registry.json` scores to fix or which new skill
+to add. Run `node scripts/review-logs.js` to summarize the log.
+
 ## Output contract
 Return: (a) the ranked table, (b) the chosen route + why, (c) the result if you
 dispatched, or the exact command for the user to run if you did not.
