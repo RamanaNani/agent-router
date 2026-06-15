@@ -80,15 +80,36 @@ Show the top 3-5 as a table: rank, name, type, score, one-line reason. Always
 state WHY the top pick won and what the runner-up would be better at.
 
 ### 5. Route
-- If the top candidate is an **agent** and the user wants it done: dispatch it
-  via the Task tool (`subagent_type: <name>`), passing the restated task.
-- If the top candidate is a **skill**: invoke it via the Skill tool (or tell the
-  user the `/command` to run).
+- If the top candidate is an **agent** and the user wants it done: dispatch it via the
+  Task tool (`subagent_type: <name>`), passing the restated task. **Append this to every
+  dispatch prompt** so the work is legible when it returns:
+  > End your reply with a `## What I did` section: bullet each file you changed (path +
+  > one line on what/why), the commands you ran to verify, the result (pass/fail), and
+  > anything you skipped or were unsure about.
+- If the top candidate is a **skill**: invoke it via the Skill tool (or tell the user the
+  `/command` to run).
 - If two candidates are within 5 points, ask the user to choose (show both).
 - **Nothing scored ≥ 25 (no installed tool fits)?** Don't stop at "nothing found" —
-  automatically run **`/skill-finder`** for this task. It searches the marketplace +
-  web + curated catalog for an *uninstalled* specialist and returns ranked options
-  with the exact install command. Never invent a tool that doesn't exist.
+  automatically run **`/skill-finder`** for this task. It searches the marketplace + web +
+  curated catalog for an *uninstalled* specialist and returns ranked options with the exact
+  install command. Never invent a tool that doesn't exist.
+
+### 5a. Report what the agent(s) did (consolidated summary)
+After any dispatched agent finishes, don't just end the turn — print a clean consolidated
+report so the user sees what happened without expanding each subagent transcript:
+
+```
+## Run summary
+**<agent> — <surface / scope>**  (<N> tool uses)
+- Changed: <file> — <what / why>
+- Verified: <command> → <pass | fail>
+- Skipped / flagged: <anything deferred or uncertain>
+```
+
+One block per dispatched agent (pull it from each agent's `## What I did` section). If
+agents ran in parallel, show all blocks, then a one-line **Net:** of the combined result
+(e.g. "both surfaces compile; secret rotation still on you"). Keep it tight — this is the
+at-a-glance view; the full transcript is still one keypress away (`ctrl+o` / the agent panel).
 
 ### 5b. Ask for a rating (native feedback loop)
 Right after routing, close with a one-line prompt so feedback is part of the flow,

@@ -21,6 +21,10 @@ All notable changes to agent-router are documented here. The format follows
   `data/registry.json`; all personal data (decision log, learned overlay, retrieval
   index) lives under `~/.claude/agent-router/` and is never committed or published.
 
+- **Consolidated run summary**: dispatched agents return a structured `## What I did`
+  section, and the router prints a per-agent **Run summary** (files changed, verification,
+  flags) after they finish — so multi-agent runs are legible at a glance.
+
 ### Fixed
 - `install.js` usage text now says `npx claude-agent-router` (was `npx agent-router`).
 - The npm tarball no longer includes the machine-specific generated index.
