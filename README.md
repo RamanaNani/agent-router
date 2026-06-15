@@ -13,9 +13,14 @@ remember which of your dozens of skills/agents to use.
 
 ## How it works
 Given a task, it:
-1. Inventories candidates from the session list, `~/.claude/`, `./.claude/`, and plugins.
-2. Scores each 0-100 = relevance (60) + specificity (20) + reputation (20, from `data/registry.json`).
-3. Shows a ranked table and routes to / recommends the top pick.
+1. **Indexes** every installed skill/agent — top-level `~/.claude/`, project `./.claude/`,
+   **and the full plugins tree** — then retrieves the top candidates with BM25. This scales
+   to thousands of skills instead of only seeing what's in the session list.
+2. **Scores** each 0-100 = relevance (60) + specificity (20) + reputation (20). Reputation
+   blends the curated `data/registry.json` baseline with your private *learned overlay*.
+3. **Ranks and routes** — shows a ranked table and routes to / recommends the top pick.
+4. **Learns** — you rate each route (bad/ok/good/excellent) and it adapts to the tools you
+   actually keep choosing. If nothing installed fits, it falls back to `/skill-finder`.
 
 ## Install
 
@@ -32,16 +37,16 @@ first. This installs the `/agent-router` and `/skill-finder` skills plus the
 advisor agent, pulled directly from this public GitHub repo (there is no central
 registry — anyone can add any repo as a marketplace).
 
-### npx installer (full toolkit, incl. the rating + learning scripts)
+### npx installer (coming with 0.2.0 — not published yet)
+Once published, this will install everything — skills, agent, curated data, and the
+rating/learning scripts — into `~/.claude/agent-router/`:
 ```
-npx claude-agent-router            # installs to ~/.claude (user scope)
-npx claude-agent-router --project  # installs to ./.claude (project scope)
+npx claude-agent-router            # user scope  (NOT published yet)
+npx claude-agent-router --project  # project scope
 ```
-Use this if you want the rating/learning loop: it also copies the helper scripts
-(`feedback.js`, `learn.js`, `review-logs.js`) and the curated data into
-`~/.claude/agent-router/`. (npm package: `claude-agent-router`; the GitHub repo and
-plugin are named `agent-router`. The `0.2.0` publish with the learning loop is
-pending — until then, get the scripts via the plugin/clone and run them from `scripts/`.)
+**For now, use the plugin install above** (it's current), or clone the repo and run the
+scripts from `scripts/`. npm package will be `claude-agent-router`; the repo and plugin
+are named `agent-router`.
 
 ## Using the skills
 
@@ -81,51 +86,44 @@ The curated reputation (`data/registry.json`) ships with the package and is the 
 for everyone. Everything personal — your decision log and the learned overlay — lives
 only under `~/.claude/agent-router/` and is never committed or published.
 
-## Discover new skills (for new users)
-Empty `~/.claude/`? Use the companion **skill-finder** skill to browse the
-marketplace and find highly-rated tools to install:
-```
-/skill-finder
-```
-or ask: *"what skills are available for testing?"* It checks what you already
-have, then ranks *uninstalled* candidates by **relevance + rating** (GitHub stars
-or curated score), shows each source link, and gives you the exact `/plugin
-install` (or `npx`) command. Candidates come from a live web/GitHub search plus
-the curated catalog in `data/marketplace.json` — it never invents repos.
+## Tuning & dogfooding
+Every routing/discovery decision is logged to
+`~/.claude/agent-router/logs/decisions.jsonl` (local only, never committed). Use it to
+make routing better over time:
 
-## Use it internally first (dogfood with logs)
-Both skills append a JSON line to `~/.claude/agent-router/logs/decisions.jsonl`
-every time they run — the task, what they picked, and (for skill-finder) what was
-missing. After a week or two of real use:
-```
-node scripts/review-logs.js
-```
-prints a summary: most-routed tools, misroutes you flagged, and the capabilities
-you keep needing but don't have. Use it to tune `data/registry.json` scores and
-decide which skills to build before publishing. The log lives in `~/.claude`
-(personal) — it is **not** committed to the repo.
+- **Rate routes** — see [Using the skills](#using-the-skills) step 2, so `learn.js` adapts.
+- **Review the log** — `review-logs.js` prints most-routed tools, misroutes you flagged,
+  and capabilities you keep needing but don't have (gaps worth installing/building).
+- **Tune the curated scores** — edit `data/registry.json`: add
+  `{ name, type, score, source, notes }` for tools you trust; unknown tools default to 10.
 
-## Customize the reputation scores
-Edit `data/registry.json` — add `{ name, type, score, source, notes }` entries for
-tools you trust. Unknown tools default to a neutral score of 10.
+Run the scripts from `~/.claude/agent-router/scripts/` (npx install) or `scripts/`
+(if you cloned the repo).
 
 ## Layout
 ```
 agent-router/
 ├── package.json                          # npm metadata (claude-agent-router) + bin
-├── scripts/install.js                    # npx installer (copies into ~/.claude)
-├── scripts/review-logs.js                # summarizes the decision log (dogfooding)
-├── workflows/agent-router-orchestrate.js # DAG orchestrator (parallel/sequential, /workflows)
 ├── .claude-plugin/
-│   ├── plugin.json                       # plugin manifest (skills + agents)
+│   ├── plugin.json                       # plugin manifest (skills; agent auto-discovered)
 │   └── marketplace.json                  # marketplace entry for /plugin install
 ├── skills/agent-router/SKILL.md          # the routing skill (recommend + dispatch)
 ├── skills/skill-finder/SKILL.md          # marketplace discovery (browse + rank by rating)
 ├── agents/agent-router.md                # the advisor subagent (recommend only)
-├── data/registry.json                    # curated reputation of installed tools
+├── scripts/
+│   ├── build-index.js                    # retrieval index over installed skills (BM25 + RRF)
+│   ├── feedback.js                       # 4-level rating capture (1-4 / bad..excellent)
+│   ├── learn.js                          # bandit: ratings -> private learned overlay
+│   ├── review-logs.js                    # decision-log summary
+│   ├── update-check.js                   # daily version check vs GitHub
+│   └── install.js                        # npx installer (copies into ~/.claude)
+├── workflows/agent-router-orchestrate.js # DAG orchestrator (parallel/sequential, /workflows)
+├── data/registry.json                    # curated reputation (shipped, shareable)
 ├── data/marketplace.json                 # curated discovery catalog (skill-finder)
-└── FINDINGS.md                           # research-validated design notes + citations
+└── DESIGN.md · FINDINGS.md · CHANGELOG · CONTRIBUTING · SECURITY · CODE_OF_CONDUCT · LICENSE
 ```
+Personal/runtime data (decision log, learned overlay, retrieval index) lives under
+`~/.claude/agent-router/` — never in the repo.
 
 ## License
 MIT
