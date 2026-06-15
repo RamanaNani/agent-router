@@ -120,7 +120,8 @@ async function interactive(lines, idx, row) {
 async function main() {
   const [, , word, ...rest] = process.argv;
   if (word === "-h" || word === "--help") {
-    console.log("\n  Usage: node scripts/feedback.js [bad|ok|good|excellent] [note]");
+    console.log("\n  Usage: node scripts/feedback.js [1-4 | bad|ok|good|excellent] [note]");
+    console.log("    1=bad  2=ok  3=good  4=excellent  (also accepts b/o/g/e)");
     console.log("  Or run with no args in a terminal for the interactive rater.\n");
     process.exit(0);
   }
@@ -129,17 +130,20 @@ async function main() {
   if (loaded.err) { console.error(`\n  ${loaded.err}\n`); process.exit(1); }
   const { lines, idx, row } = loaded;
 
-  // Direct mode: a rating word was given (used by the skill / scripts).
+  // Direct mode: a rating token was given — number (1-4), letter (b/o/g/e), or word.
   if (word) {
-    const rating = RATINGS[word.toLowerCase()] !== undefined ? word.toLowerCase() : null;
-    if (!rating) {
-      console.error(`\n  Unknown rating "${word}". Use: bad | ok | good | excellent\n`);
+    const tok = word.toLowerCase();
+    // numbers + letters resolve via KEYS; words + aliases via RATINGS.
+    let canon = KEYS[tok] || null;
+    if (!canon && RATINGS[tok] !== undefined) {
+      canon = tok === "win" || tok === "great" || tok === "right" ? "excellent"
+        : tok === "loss" || tok === "wrong" || tok === "fail" ? "bad"
+        : tok === "okay" ? "ok" : tok;
+    }
+    if (!canon) {
+      console.error(`\n  Unknown rating "${word}". Use 1/2/3/4 or bad/ok/good/excellent.\n`);
       process.exit(1);
     }
-    // normalize aliases (win/great -> excellent, loss/wrong/fail -> bad) for display
-    const canon = rating === "win" || rating === "great" || rating === "right" ? "excellent"
-      : rating === "loss" || rating === "wrong" || rating === "fail" ? "bad"
-      : rating === "okay" ? "ok" : rating;
     save(lines, idx, row, canon, rest.join(" ").trim());
     process.exit(0);
   }
