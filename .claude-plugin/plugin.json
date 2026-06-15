@@ -11,6 +11,5 @@
   "license": "MIT",
   "keywords": ["agents", "skills", "router", "orchestration", "dispatch"],
   "mcpServers": {},
-  "skills": ["./skills/"],
-  "agents": ["./agents/"]
+  "skills": ["./skills/"]
 }

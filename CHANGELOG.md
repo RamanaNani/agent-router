@@ -24,6 +24,8 @@ All notable changes to agent-router are documented here. The format follows
 ### Fixed
 - `install.js` usage text now says `npx claude-agent-router` (was `npx agent-router`).
 - The npm tarball no longer includes the machine-specific generated index.
+- Plugin manifest: removed the invalid `agents` field that failed install validation
+  (`agents: Invalid input`). The agent auto-discovers from the `agents/` directory.
 
 ## [0.1.0] - 2026-06-07
 ### Added
