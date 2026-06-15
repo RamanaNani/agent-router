@@ -17,32 +17,69 @@ Given a task, it:
 2. Scores each 0-100 = relevance (60) + specificity (20) + reputation (20, from `data/registry.json`).
 3. Shows a ranked table and routes to / recommends the top pick.
 
-## Install / register — two ways
+## Install
 
-### A) Claude Code plugin (no npm needed)
-Push this repo to GitHub, then anyone runs:
+### Claude Code plugin (recommended — no npm needed)
+Run **both** commands, **in this order**. The first registers this repo as a
+marketplace; the second installs the plugin from it:
 ```
 /plugin marketplace add RamanaNani/agent-router
 /plugin install agent-router@agent-router
 ```
-(The `.claude-plugin/marketplace.json` and `plugin.json` make this work.)
+`agent-router@agent-router` reads as `<plugin>@<marketplace>`. If you run the
+install line first you'll see **"Marketplace not found"** — add the marketplace
+first. This installs the `/agent-router` and `/skill-finder` skills plus the
+advisor agent, pulled directly from this public GitHub repo (there is no central
+registry — anyone can add any repo as a marketplace).
 
-### B) npx installer (published to npm)
-Published as **[`claude-agent-router`](https://www.npmjs.com/package/claude-agent-router)**.
-Anyone installs the skill + agent into their Claude config with:
+### npx installer (full toolkit, incl. the rating + learning scripts)
 ```
 npx claude-agent-router            # installs to ~/.claude (user scope)
 npx claude-agent-router --project  # installs to ./.claude (project scope)
 ```
-This also installs the registry/discovery data and the log-review tool under
-`~/.claude/agent-router/`. (The npm package name is `claude-agent-router`; the
-GitHub repo and Claude Code plugin are named `agent-router`.)
+Use this if you want the rating/learning loop: it also copies the helper scripts
+(`feedback.js`, `learn.js`, `review-logs.js`) and the curated data into
+`~/.claude/agent-router/`. (npm package: `claude-agent-router`; the GitHub repo and
+plugin are named `agent-router`. The `0.2.0` publish with the learning loop is
+pending — until then, get the scripts via the plugin/clone and run them from `scripts/`.)
 
-## Use it
+## Using the skills
+
+**1. Route a task** — run the skill; it ranks your installed skills/agents and routes
+to the best one:
 ```
 /agent-router
 ```
-or just ask: *"which agent should I use to review this Go file?"*
+or just ask in plain language: *"which agent should I use to review this Go file?"*
+You get a ranked table (top picks + why each won, what the runner-up is better at),
+then it routes to or recommends the winner.
+
+**2. Rate the result so it learns** — after you've actually used the routed tool,
+score it on a 4-level scale. This is what makes the router improve on *your* setup:
+```
+node ~/.claude/agent-router/scripts/feedback.js        # interactive: press 1=bad 2=ok 3=good 4=excellent
+node ~/.claude/agent-router/scripts/feedback.js good   # or score the last route directly
+node ~/.claude/agent-router/scripts/feedback.js wrong codex   # mark it wrong + name the better pick
+```
+Tip: `alias f='node ~/.claude/agent-router/scripts/feedback.js'` — then just press `f`.
+
+**3. Fold ratings into the scores** (run periodically):
+```
+node ~/.claude/agent-router/scripts/learn.js        # trains the bandit, updates your private overlay
+node ~/.claude/agent-router/scripts/review-logs.js  # summary: most-routed tools, gaps, avg rating per tool
+```
+
+**4. Discover tools you don't have** — `/skill-finder` ranks highly-rated skills/agents
+from the marketplace you haven't installed yet, with the exact install command.
+
+> The rating/learning scripts (step 2-3) ship with the `npx` install, or clone this
+> repo and run them from `scripts/`. Routing (1) and discovery (4) work from the
+> plugin install alone.
+
+### Your data stays private
+The curated reputation (`data/registry.json`) ships with the package and is the same
+for everyone. Everything personal — your decision log and the learned overlay — lives
+only under `~/.claude/agent-router/` and is never committed or published.
 
 ## Discover new skills (for new users)
 Empty `~/.claude/`? Use the companion **skill-finder** skill to browse the
