@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & ideas (Discussions)
+    url: https://github.com/RamanaNani/agent-router/discussions
+    about: Ask questions, share routing setups, or float ideas before filing an issue.
+  - name: Security report
+    url: https://github.com/RamanaNani/agent-router/security/policy
+    about: Please report vulnerabilities privately — see SECURITY.md, not a public issue.

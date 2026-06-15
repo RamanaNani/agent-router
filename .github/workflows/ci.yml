@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Syntax-check all JS
+        run: |
+          for f in scripts/*.js workflows/*.js; do
+            echo "checking $f"
+            node --check "$f"
+          done
+      - name: Validate JSON manifests + data
+        run: |
+          for j in package.json .claude-plugin/plugin.json .claude-plugin/marketplace.json data/registry.json data/marketplace.json; do
+            node -e "JSON.parse(require('fs').readFileSync('$j','utf8')); console.log('ok: $j')"
+          done
