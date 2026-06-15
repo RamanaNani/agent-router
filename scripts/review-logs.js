@@ -54,6 +54,24 @@ if (flagged.length) {
   flagged.slice(0, 10).forEach((r) => console.log(`      - ${r.chosen}: ${r.feedback}`));
 }
 
+const rated = router.filter((r) => typeof r.reward === "number");
+if (rated.length) {
+  const agg = new Map(); // chosen -> { sum, n }
+  for (const r of rated) {
+    const k = r.chosen || "-";
+    const a = agg.get(k) || { sum: 0, n: 0 };
+    a.sum += r.reward; a.n++; agg.set(k, a);
+  }
+  const overall = rated.reduce((s, r) => s + r.reward, 0) / rated.length;
+  console.log(`\n  RATINGS  (${rated.length}/${router.length} routes rated, avg reward ${overall.toFixed(2)})`);
+  const ranked = [...agg.entries()]
+    .map(([n, a]) => [n, a.sum / a.n, a.n])
+    .sort((x, y) => y[1] - x[1]);
+  for (const [n, avg, c] of ranked.slice(0, 10)) {
+    console.log(`    ${avg.toFixed(2)} avg  ${n}  (${c} rated)`);
+  }
+}
+
 console.log(`\n  DISCOVERY  (${finder.length})`);
 for (const [n, c] of tally(finder, "domain").slice(0, 10)) {
   console.log(`    ${String(c).padStart(3)}x  ${n}`);

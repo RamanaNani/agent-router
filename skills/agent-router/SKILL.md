@@ -15,6 +15,10 @@ this session, scores them against the task, and routes to the best one.
 
 ## Procedure
 
+**Mode check (first):** If the invocation is `feedback <good|wrong> [note]`, skip
+routing entirely and go straight to step 7 (score the last route). Otherwise run
+steps 1-6 to route a task.
+
 ### 1. Capture the task
 Restate the user's task in one sentence. Note the domain (code review, research,
 testing, design, security, infra, data, etc.) and any constraints (language,
@@ -38,9 +42,19 @@ Combine three signals:
   `description` + `name`. Exact-domain match scores high; generic matches low.
 - **Specificity (0-20)**: a purpose-built specialist beats a catch-all
   (e.g. `python-reviewer` > generic `code-reviewer` for Python).
-- **Reputation (0-20)**: look it up in `data/registry.json` (curated quality
-  signals). If absent, default to 10. Optionally refine with a quick web search
-  when the user wants "market findings".
+- **Reputation (0-20)**: combine two separate sources —
+  1. the **curated baseline** registry (`tools[]`) — shareable, shipped with the
+     package, the same for everyone. Read it from the installed location
+     `~/.claude/agent-router/data/registry.json` (in this source repo it lives at
+     `data/registry.json`); and
+  2. your **personal learned overlay** at `~/.claude/agent-router/learned.json`
+     (per-(domain,tool) scores from your own ratings — see step 7), which is private
+     and never lives in the repo.
+
+  Prefer the learned score when this (domain,tool) has been rated before; else use
+  the curated score; else default 10. The skill only *references* the private
+  overlay at runtime — internal/runtime data and the shareable skill stay separate.
+  Optionally refine with a web search when the user wants "market findings".
 
 Drop anything scoring < 25 as irrelevant.
 
@@ -64,10 +78,42 @@ can review and improve routing over time:
 mkdir -p ~/.claude/agent-router/logs
 echo '{"ts":"'"$(date -u +%FT%TZ)"'","skill":"agent-router","task":"<one-line task>","domain":"<domain>","chosen":"<name>","chosen_score":<0-100>,"runner_up":"<name|->","action":"<recommended|dispatched|none>","outcome":"","feedback":""}' >> ~/.claude/agent-router/logs/decisions.jsonl
 ```
-Fill the placeholders; leave `outcome`/`feedback` empty (annotate later, or when the
-user says the pick was wrong). Misroutes and `"action":"none"` rows are the highest-
-value signals — they show which `data/registry.json` scores to fix or which new skill
-to add. Run `node scripts/review-logs.js` to summarize the log.
+Fill the placeholders; leave `outcome`/`feedback`/`rating`/`reward` empty — they get
+filled later by the rating step (7). Misroutes and `"action":"none"` rows are the
+highest-value signals — they show which `data/registry.json` scores to fix or which
+new skill to add. Run `node scripts/review-logs.js` to summarize the log.
+
+### 7. Capture a rating (closes the learning loop)
+A route teaches the router nothing until it's rated — `learn.js` only trains on rows
+that carry a `reward`. Rating uses a **4-level scale** that maps to a reward in [0,1]:
+
+| rating | reward |
+|--------|--------|
+| bad | 0.0 |
+| ok | 0.34 |
+| good | 0.67 |
+| excellent | 1.0 |
+
+**When the user invokes `/agent-router feedback <bad|ok|good|excellent> [note]`**, skip
+routing and run:
+```bash
+node scripts/feedback.js <bad|ok|good|excellent> [note]
+```
+It rates the most recent agent-router row in `~/.claude/agent-router/logs/decisions.jsonl`
+(sets `rating`, `reward`, a back-compat `outcome`, and any note as `feedback`).
+
+**In a plain terminal**, running it with no args opens an interactive rater that shows
+the last route and waits for a single keypress:
+```
+[1] bad   [2] ok   [3] good   [4] excellent     [f] add a note     [s] skip
+```
+Tip: add a shell alias so rating is one key — `alias f='node ~/path/to/agent-router/scripts/feedback.js'` — then just type `f` after a route.
+
+Periodically fold ratings into the reputation scores:
+```bash
+node scripts/learn.js          # discounted bandit over graded rewards -> ~/.claude/agent-router/learned.json (private)
+node scripts/review-logs.js    # summary: most-routed, gaps, ratings
+```
 
 ## Output contract
 Return: (a) the ranked table, (b) the chosen route + why, (c) the result if you

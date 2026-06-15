@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
  * agent-router installer.
- * Copies this package's skills/, agents/, data/, and scripts/review-logs.js into
- * the user's ~/.claude/ so the skill (and its registry/discovery data + log
- * review tool) all work after an `npx` install. Idempotent: re-running overwrites.
+ * Copies this package's skills/, agents/, data/, and the helper scripts
+ * (review-logs.js, learn.js, feedback.js) into the user's ~/.claude/ so the skill
+ * (its registry/discovery data + the log/learning tools) works after install.
+ * Idempotent: re-running overwrites.
  *
- * Usage:  npx agent-router            # install to ~/.claude (user scope)
- *         npx agent-router --project  # install to ./.claude (project scope)
+ * Usage:  npx claude-agent-router            # install to ~/.claude (user scope)
+ *         npx claude-agent-router --project  # install to ./.claude (project scope)
  */
 const fs = require("fs");
 const os = require("os");
@@ -49,11 +50,14 @@ try {
   const home = path.join(dest, "agent-router");
   const data = copyDir(path.join(root, "data"), path.join(home, "data"));
   let scripts = 0;
-  const reviewSrc = path.join(root, "scripts", "review-logs.js");
-  if (fs.existsSync(reviewSrc)) {
-    fs.mkdirSync(path.join(home, "scripts"), { recursive: true });
-    fs.copyFileSync(reviewSrc, path.join(home, "scripts", "review-logs.js"));
-    scripts = 1;
+  const scriptNames = ["review-logs.js", "learn.js", "feedback.js"];
+  fs.mkdirSync(path.join(home, "scripts"), { recursive: true });
+  for (const name of scriptNames) {
+    const src = path.join(root, "scripts", name);
+    if (fs.existsSync(src)) {
+      fs.copyFileSync(src, path.join(home, "scripts", name));
+      scripts++;
+    }
   }
 
   console.log(`\n  agent-router installed to ${dest}`);

@@ -1,6 +1,6 @@
 {
   "name": "claude-agent-router",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A Claude Code skill + agent that discovers every installed skill and subagent, ranks them for the task at hand, and routes to the best one.",
   "publishConfig": { "access": "public" },
   "bin": {

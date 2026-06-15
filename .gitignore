@@ -1,0 +1,17 @@
+# OS / editor junk
+.DS_Store
+*.swp
+*~
+
+# Node
+node_modules/
+
+# Generated retrieval index — built locally via scripts/build-index.js.
+# Contains machine-specific absolute paths; rebuild on each machine instead.
+data/skills-index.json
+
+# Private runtime/context — the decision log AND the learned overlay live under
+# ~/.claude/agent-router/; project-scope installs write to ./.claude. None of this
+# personal data is ever committed.
+.claude/agent-router/
+*.log
