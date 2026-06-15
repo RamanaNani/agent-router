@@ -66,7 +66,8 @@ Two entry points:
 | Routing skill + advisor agent + `/skill-finder` | Shipped |
 | `data/registry.json` (curated reputation) | Shipped |
 | `scripts/learn.js` — discounted Beta-Bernoulli / Thompson-sampling bandit | Built; trains on graded ratings, writes the learned overlay to the **private** `~/.claude/agent-router/learned.json` |
-| `scripts/build-index.js` — BM25 + optional dense embeddings, fused with RRF | Built (retrieval index, experimental — not on the default routing path yet) |
+| `scripts/build-index.js` — BM25 + optional dense embeddings, fused with RRF | Built and **wired into routing** — indexes all installed skills (top-level + the full plugins tree) to the private `~/.claude/agent-router/skills-index.json`; the router retrieves top-K candidates from it instead of eyeballing the session list |
+| `scripts/update-check.js` — daily-cached version check vs GitHub | Built; the skill surfaces a one-line "update available" notice |
 | `scripts/feedback.js` — 4-level rating capture (bad/ok/good/excellent → reward 0/0.34/0.67/1) | Built; interactive keypress rater + scriptable direct mode |
 | Shareable-vs-private data separation | Built; repo ships only the curated `data/registry.json`, all personal data (decision log + learned overlay) lives under `~/.claude/agent-router/` and is gitignored |
 

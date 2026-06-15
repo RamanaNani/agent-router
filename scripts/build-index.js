@@ -16,8 +16,11 @@ const path = require("path");
 const crypto = require("crypto");
 const { execSync } = require("child_process");
 
-const ROOT = path.resolve(__dirname, "..");
-const INDEX_PATH = path.join(ROOT, "data", "skills-index.json");
+// The index lists THIS machine's installed skills (with local file paths), so it is
+// personal/runtime data — it lives in the private ~/.claude/agent-router/ dir next to
+// the decision log and learned overlay, never in the shareable repo.
+const RUNTIME_DIR = path.join(os.homedir(), ".claude", "agent-router");
+const INDEX_PATH = path.join(RUNTIME_DIR, "skills-index.json");
 
 const K1 = 1.5; // BM25 term-saturation
 const B = 0.75; // BM25 length-normalization
@@ -54,8 +57,23 @@ function addDoc(docs, file, type, source) {
   });
 }
 
+// Recursively find SKILL.md files under a dir, skipping junk and capping depth so
+// a big plugin tree (thousands of files) stays fast and noise-free.
+function walkSkillFiles(dir, depth, maxDepth, out) {
+  if (depth > maxDepth) return;
+  let entries;
+  try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+  for (const e of entries) {
+    if (e.name === "node_modules" || e.name === ".git" || e.name === "tests" || e.name === "test") continue;
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) walkSkillFiles(full, depth + 1, maxDepth, out);
+    else if (e.name === "SKILL.md") out.push(full);
+  }
+}
+
 function collect() {
   const docs = [];
+  // 1. user + project scope: top-level skills/ and agents/
   for (const base of [path.join(os.homedir(), ".claude"), path.join(process.cwd(), ".claude")]) {
     const skillsDir = path.join(base, "skills");
     if (fs.existsSync(skillsDir)) {
@@ -72,7 +90,34 @@ function collect() {
       }
     }
   }
-  return docs;
+  // 2. installed plugins: ~/.claude/plugins/marketplaces/<mp>/** (skills + agents).
+  //    This is where ecc/ruflo/etc. live — thousands of skills the old glob missed.
+  const mpRoot = path.join(os.homedir(), ".claude", "plugins", "marketplaces");
+  if (fs.existsSync(mpRoot)) {
+    for (const mp of fs.readdirSync(mpRoot, { withFileTypes: true })) {
+      if (!mp.isDirectory()) continue;
+      const src = `plugin:${mp.name}`;
+      const skillFiles = [];
+      walkSkillFiles(path.join(mpRoot, mp.name), 0, 5, skillFiles);
+      for (const f of skillFiles) addDoc(docs, f, "skill", src);
+      const agentsDir = path.join(mpRoot, mp.name, "agents");
+      if (fs.existsSync(agentsDir)) {
+        for (const e of fs.readdirSync(agentsDir, { withFileTypes: true })) {
+          if (e.isFile() && e.name.endsWith(".md")) addDoc(docs, path.join(agentsDir, e.name), "agent", src);
+        }
+      }
+    }
+  }
+  // dedup by type:name (vendored copies across plugins collapse to one)
+  const seen = new Set();
+  const out = [];
+  for (const d of docs) {
+    const key = `${d.type}:${d.name}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(d);
+  }
+  return out;
 }
 
 // ── Tokenize + BM25 ──────────────────────────────────────────────────────────
