@@ -33,6 +33,20 @@ Restate the user's task in one sentence. Note the domain (code review, research,
 testing, design, security, infra, data, etc.) and any constraints (language,
 framework, speed vs. depth).
 
+### 1a. Decompose multi-task requests (do NOT collapse to one tool)
+If the request bundles **multiple distinct tasks** ("audit X, fix the SSE latency, add inline
+citations, find optimizations"), routing the whole thing to a single agent is the #1 failure
+mode — it leaves most of the request unaddressed. Instead:
+1. Split it into sub-tasks; run steps 2-4 to route **each sub-task to its own best specialist**.
+2. Classify dependencies:
+   - **Independent** sub-tasks → dispatch in **parallel** (multiple Task calls in one turn).
+   - **Dependent** sub-tasks (B needs A's output — e.g. "fix the latency" needs the audit first)
+     → **sequence** them, and say why.
+3. Show the decomposition as a short plan first — `sub-task → chosen tool → parallel | after <X>`
+   — so the user sees **all N tasks are covered**, not just one.
+Then dispatch per the plan and give one consolidated Run summary (5a) spanning every sub-task.
+A single-tool route is correct only when the request is genuinely one task.
+
 ### 2. Inventory via the retrieval index (do NOT read every skill)
 You may have **thousands** of installed skills/agents across `~/.claude/skills/`,
 `~/.claude/agents/`, and `~/.claude/plugins/` — far too many to read each one, and
