@@ -144,12 +144,17 @@ that carry a `reward`. Rating uses a **4-level scale** that maps to a reward in 
 | excellent | 1.0 |
 
 **When the user invokes `/agent-router feedback <bad|ok|good|excellent> [note]`**, skip
-routing and run:
+routing and record it **instantly, then learn in the background** — the user must never
+wait on processing:
 ```bash
-node <scripts>/feedback.js <bad|ok|good|excellent> [note]
+node <scripts>/feedback.js <bad|ok|good|excellent> [note]   # instant: one-line append to the last row
+node <scripts>/learn.js >/dev/null 2>&1 &                   # detached: retrain the bandit, do NOT block
 ```
-It rates the most recent agent-router row in `~/.claude/agent-router/logs/decisions.jsonl`
-(sets `rating`, `reward`, a back-compat `outcome`, and any note as `feedback`).
+The first command is a sub-second append. The second folds the rating into `learned.json`
+and runs **detached (`&`)**, so confirm the rating in one line ("logged ✓ — good (0.67)") and
+let the user go straight to their next task. Never make them wait for the learning step.
+(`feedback.js` sets `rating`, `reward`, a back-compat `outcome`, and any note as `feedback` on
+the most recent row in `~/.claude/agent-router/logs/decisions.jsonl`.)
 
 **In a plain terminal**, running it with no args opens an interactive rater that shows
 the last route and waits for a single keypress:
