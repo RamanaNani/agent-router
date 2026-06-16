@@ -111,14 +111,16 @@ agents ran in parallel, show all blocks, then a one-line **Net:** of the combine
 (e.g. "both surfaces compile; secret rotation still on you"). Keep it tight — this is the
 at-a-glance view; the full transcript is still one keypress away (`ctrl+o` / the agent panel).
 
-### 5b. Ask for a rating (native feedback loop)
-Right after routing, close with a one-line prompt so feedback is part of the flow,
-not an afterthought:
+### 5b. Ask for a rating (native-style, one keypress)
+Right after routing, close with a single compact line that mirrors Claude Code's own
+session-feedback widget — optional, one character, never blocking:
 
-> Rate this route so it learns: **bad / ok / good / excellent** (or `/agent-router feedback <rating>` later).
+> **Rate this route?**  `1` bad · `2` ok · `3` good · `4` excellent · `0` skip
 
-If the user replies with a rating this turn, record it immediately via
-`node <scripts>/feedback.js <rating>` (step 7). If they don't, leave the row unrated.
+If the user's next message is a single digit `1`-`4`, record it immediately and learn in the
+background (step 7): `node <scripts>/feedback.js <digit>`. `0`, "skip", or anything unrelated =
+leave the row unrated and move on. Never re-ask, never block on it. (A skill can't render the
+real keypress widget — this one-line digit prompt is the closest equivalent.)
 
 ### 6. Log the decision (internal dogfooding)
 After every routing decision, append ONE JSONL line to your decision log so you
