@@ -111,6 +111,23 @@ agents ran in parallel, show all blocks, then a one-line **Net:** of the combine
 (e.g. "both surfaces compile; secret rotation still on you"). Keep it tight — this is the
 at-a-glance view; the full transcript is still one keypress away (`ctrl+o` / the agent panel).
 
+### 5a. Report what the agent(s) did (consolidated summary)
+After any dispatched agent finishes, don't just end the turn — print a clean consolidated
+report so the user sees what happened without expanding each subagent transcript:
+
+```
+## Run summary
+**<agent> — <surface / scope>**  (<N> tool uses)
+- Changed: <file> — <what / why>
+- Verified: <command> → <pass | fail>
+- Skipped / flagged: <anything deferred or uncertain>
+```
+
+One block per dispatched agent (pull it from each agent's `## What I did` section). If
+agents ran in parallel, show all blocks, then a one-line **Net:** of the combined result
+(e.g. "both surfaces compile; secret rotation still on you"). Keep it tight — this is the
+at-a-glance view; the full transcript is still one keypress away (`ctrl+o` / the agent panel).
+
 ### 5b. Ask for a rating (native-style, one keypress)
 Right after routing, close with a single compact line that mirrors Claude Code's own
 session-feedback widget — optional, one character, never blocking:
