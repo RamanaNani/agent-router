@@ -111,14 +111,33 @@ agents ran in parallel, show all blocks, then a one-line **Net:** of the combine
 (e.g. "both surfaces compile; secret rotation still on you"). Keep it tight — this is the
 at-a-glance view; the full transcript is still one keypress away (`ctrl+o` / the agent panel).
 
-### 5b. Ask for a rating (native feedback loop)
-Right after routing, close with a one-line prompt so feedback is part of the flow,
-not an afterthought:
+### 5a. Report what the agent(s) did (consolidated summary)
+After any dispatched agent finishes, don't just end the turn — print a clean consolidated
+report so the user sees what happened without expanding each subagent transcript:
 
-> Rate this route so it learns: **bad / ok / good / excellent** (or `/agent-router feedback <rating>` later).
+```
+## Run summary
+**<agent> — <surface / scope>**  (<N> tool uses)
+- Changed: <file> — <what / why>
+- Verified: <command> → <pass | fail>
+- Skipped / flagged: <anything deferred or uncertain>
+```
 
-If the user replies with a rating this turn, record it immediately via
-`node <scripts>/feedback.js <rating>` (step 7). If they don't, leave the row unrated.
+One block per dispatched agent (pull it from each agent's `## What I did` section). If
+agents ran in parallel, show all blocks, then a one-line **Net:** of the combined result
+(e.g. "both surfaces compile; secret rotation still on you"). Keep it tight — this is the
+at-a-glance view; the full transcript is still one keypress away (`ctrl+o` / the agent panel).
+
+### 5b. Ask for a rating (native-style, one keypress)
+Right after routing, close with a single compact line that mirrors Claude Code's own
+session-feedback widget — optional, one character, never blocking:
+
+> **Rate this route?**  `1` bad · `2` ok · `3` good · `4` excellent · `0` skip
+
+If the user's next message is a single digit `1`-`4`, record it immediately and learn in the
+background (step 7): `node <scripts>/feedback.js <digit>`. `0`, "skip", or anything unrelated =
+leave the row unrated and move on. Never re-ask, never block on it. (A skill can't render the
+real keypress widget — this one-line digit prompt is the closest equivalent.)
 
 ### 6. Log the decision (internal dogfooding)
 After every routing decision, append ONE JSONL line to your decision log so you
@@ -144,12 +163,17 @@ that carry a `reward`. Rating uses a **4-level scale** that maps to a reward in 
 | excellent | 1.0 |
 
 **When the user invokes `/agent-router feedback <bad|ok|good|excellent> [note]`**, skip
-routing and run:
+routing and record it **instantly, then learn in the background** — the user must never
+wait on processing:
 ```bash
-node <scripts>/feedback.js <bad|ok|good|excellent> [note]
+node <scripts>/feedback.js <bad|ok|good|excellent> [note]   # instant: one-line append to the last row
+node <scripts>/learn.js >/dev/null 2>&1 &                   # detached: retrain the bandit, do NOT block
 ```
-It rates the most recent agent-router row in `~/.claude/agent-router/logs/decisions.jsonl`
-(sets `rating`, `reward`, a back-compat `outcome`, and any note as `feedback`).
+The first command is a sub-second append. The second folds the rating into `learned.json`
+and runs **detached (`&`)**, so confirm the rating in one line ("logged ✓ — good (0.67)") and
+let the user go straight to their next task. Never make them wait for the learning step.
+(`feedback.js` sets `rating`, `reward`, a back-compat `outcome`, and any note as `feedback` on
+the most recent row in `~/.claude/agent-router/logs/decisions.jsonl`.)
 
 **In a plain terminal**, running it with no args opens an interactive rater that shows
 the last route and waits for a single keypress:
