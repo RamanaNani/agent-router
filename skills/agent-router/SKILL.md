@@ -95,11 +95,26 @@ state WHY the top pick won and what the runner-up would be better at.
 
 ### 5. Route
 - If the top candidate is an **agent** and the user wants it done: dispatch it via the
-  Task tool (`subagent_type: <name>`), passing the restated task. **Append this to every
-  dispatch prompt** so the work is legible when it returns:
-  > End your reply with a `## What I did` section: bullet each file you changed (path +
-  > one line on what/why), the commands you ran to verify, the result (pass/fail), and
-  > anything you skipped or were unsure about.
+  Task tool (`subagent_type: <name>`), passing the restated task. **Append this operating
+  contract to every dispatch prompt** so the work is legible, verified, and safe when it
+  returns — these four guardrails are mandatory, not optional:
+  > **1. Plan before high-risk edits.** Before editing a high-risk surface — auth/RLS,
+  > DB migrations, citations, artifact/file storage, memory writes, SSE contracts, file
+  > uploads, or anything touching credentials/secrets — first state a 5-line plan: root
+  > cause · files you'll change · files off-limits · behavior that must not change · the
+  > test that proves success. Then implement. (Low-risk edits can skip the plan.)
+  > **2. Verify by running, not by reasoning.** Run the test, command, or actual product
+  > flow that exercises your change and report the OBSERVED result. Never claim a pass you
+  > did not see. Prefer a repeatable smoke test/script over an in-your-head check.
+  > **3. Security is non-negotiable.** If you find or cause any secret exposed in plaintext
+  > (an `.env`, hardcoded token, AWS / Anthropic / Supabase JWT key, etc.), treat it as
+  > COMPROMISED: flag it for **immediate rotation** and never recommend deferring rotation.
+  > Do not print secret values.
+  > **4. Close with proof.** End your reply with a `## What I did` section (each file changed:
+  > path + what/why; commands run; anything skipped or unverified) AND a `## Final acceptance`
+  > checklist: files changed · commands run · tests passing (y/n) · manual flow tested (y/n +
+  > what) · migrations applied (y/n/NA) · known deferred items · risky areas touched ·
+  > rollback plan · decision (accept / needs another pass).
 - If the top candidate is a **skill**: invoke it via the Skill tool (or tell the user the
   `/command` to run).
 - If two candidates are within 5 points, ask the user to choose (show both).
@@ -116,14 +131,18 @@ report so the user sees what happened without expanding each subagent transcript
 ## Run summary
 **<agent> — <surface / scope>**  (<N> tool uses)
 - Changed: <file> — <what / why>
-- Verified: <command> → <pass | fail>
+- Verified: <command> → <pass | fail>   (observed, not assumed)
 - Skipped / flagged: <anything deferred or uncertain>
+- Acceptance: tests <y/n> · manual flow <y/n> · migrations <y/n/NA> · rollback <one line> · <accept | needs another pass>
+- Security: <none | SECRET EXPOSED — rotate now: which key(s)>
 ```
 
-One block per dispatched agent (pull it from each agent's `## What I did` section). If
+One block per dispatched agent (pull `Changed/Verified/Skipped` from its `## What I did`
+section and the `Acceptance`/`Security` lines from its `## Final acceptance` checklist). If
 agents ran in parallel, show all blocks, then a one-line **Net:** of the combined result
-(e.g. "both surfaces compile; secret rotation still on you"). Keep it tight — this is the
-at-a-glance view; the full transcript is still one keypress away (`ctrl+o` / the agent panel).
+(e.g. "both surfaces compile; Supabase JWT secret exposed — rotate before merge"). Surface
+any unrotated secret loudly — never let it sit in the deferred list. Keep it tight — this is
+the at-a-glance view; the full transcript is still one keypress away (`ctrl+o` / the agent panel).
 
 ### 5b. Ask for a rating (native-style, one keypress)
 Right after routing, close with a single compact line that mirrors Claude Code's own
