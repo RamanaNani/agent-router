@@ -1,6 +1,6 @@
 {
-  "version": 3,
-  "note": "Curated catalog of skills/agents Hina + agent-router can route to. Used by scripts/hina-bootstrap.js to (a) report a capability gap vs the local inventory and (b) emit exact install commands. Nothing is installed without explicit user consent. TWO CLASSES: (1) SPECIALIST SUITES (ecc, ruflo, gstack, llm-council, wshobson, voltagent, official, marketing) are ADDITIVE — install as many as you like; each behaves differently and more specialists = better routing, no conflict. (2) MEMORY engines are NOT additive — exactly ONE, and only as a BACKEND behind Hina (single source of truth, single session-start injection) via an adapter; never run two memory engines or one alongside Hina's own file memory. MEMORY DECISION (3-reviewer debate, 2026-06-16): claude-mem chosen as the single backend candidate over Claude-User-Memory (inert until Pinecone/Mem0 wired) and awesome-memory (a recall primitive). entries marked verify need their exact repo/package confirmed before install.",
+  "version": 4,
+  "note": "Curated catalog of skills/agents Hina + agent-router can route to, with install methods CROSS-CHECKED against each repo's README + manifest (2026-06-16) — no assumptions. Used by scripts/hina-bootstrap.js: it derives the marketplace's canonical name from the live manifest, then runs `claude plugin marketplace add <repo>` + `claude plugin install <plugin>@<name>` for each name in the entry's `enable` list, installing ONLY plugins not already in installed_plugins.json. TWO CLASSES: specialist suites are additive (install as many as you like); MEMORY is exactly ONE, backend-only (claude-mem), never run alongside Hina's own memory. install_method: marketplace | npm | npm-proxy | setup-script. `enable` = curated plugin names (verified) the auto-installer enables; absent/empty = register marketplace only.",
   "capabilities": [
     "specialist-supply", "code-review", "testing", "security", "debugging",
     "docs", "design-qa", "research-planning", "orchestration", "marketing",
@@ -8,115 +8,122 @@
   ],
   "entries": [
     {
-      "name": "claude-plugins-official",
-      "title": "Anthropic official plugins",
-      "source": { "type": "marketplace", "repo": "anthropics/claude-plugins-official" },
-      "install_method": "marketplace",
-      "provides": ["specialist-supply", "code-review", "docs"],
-      "risk": "low",
-      "overlaps_hina": false,
-      "recommended": true,
-      "why": "Official Anthropic plugin marketplace. Safe broad baseline — first marketplace to add for a fresh user."
-    },
-    {
       "name": "ecc",
       "title": "ECC (Every Commit Counts)",
       "source": { "type": "marketplace", "repo": "affaan-m/ECC" },
       "install_method": "marketplace",
+      "marketplace_name": "ecc",
       "provides": ["specialist-supply", "code-review", "testing", "security", "debugging", "docs", "design-qa", "research-planning"],
       "risk": "low",
       "overlaps_hina": false,
       "recommended": true,
-      "why": "Largest single suite: per-language reviewers, security-reviewer, planner, tdd-guide, build-resolvers, design tools. Broadest coverage in one install — the highest-value specialist supply."
+      "enable": ["ecc"],
+      "why": "VERIFIED: single plugin `ecc@ecc` bundles 67 agents + 271 skills. Install: `claude plugin marketplace add affaan-m/ECC` + `claude plugin install ecc@ecc`. (README shows the /plugin slash form; CLI equivalent used by the installer.)"
     },
     {
       "name": "ruflo",
       "title": "Ruflo",
       "source": { "type": "marketplace", "repo": "ruvnet/ruflo" },
       "install_method": "marketplace",
+      "marketplace_name": "ruflo",
       "provides": ["specialist-supply", "research-planning", "testing", "security", "orchestration"],
       "risk": "low",
       "overlaps_hina": false,
       "recommended": true,
-      "why": "Swarm + specialist agents: researcher, reviewer, testgen, security-audit, SPARC/workflow orchestration. Strong research + multi-agent coverage."
-    },
-    {
-      "name": "gstack",
-      "title": "gstack",
-      "source": { "type": "setup-script", "repo": "<gstack repo>", "verify": true },
-      "install_method": "setup-script",
-      "provides": ["design-qa", "research-planning", "orchestration"],
-      "risk": "low",
-      "overlaps_hina": false,
-      "recommended": true,
-      "why": "QA/design/ship + plan-review skills (plan-ceo-review, plan-eng-review, design-review, office-hours, browse). NOTE: installed via its own setup script into the skills dir, NOT a marketplace plugin — the bootstrap can't auto-detect it from known_marketplaces, and the repo slug needs verifying."
-    },
-    {
-      "name": "llm-council",
-      "title": "llm-council",
-      "source": { "type": "skill", "repo": "<llm-council source>", "verify": true },
-      "install_method": "skill",
-      "provides": ["research-planning", "orchestration"],
-      "risk": "medium",
-      "overlaps_hina": false,
-      "recommended": true,
-      "why": "Multi-model planning council: independent plans from several CLI agents, anonymized, judged + merged. Needs the council member CLIs (codex/gemini/opencode) configured to run a real cross-vendor council; degrades to fewer members otherwise. Verify source before install."
+      "enable": ["ruflo-core", "ruflo-testgen", "ruflo-security-audit", "ruflo-goals"],
+      "why": "VERIFIED: 33 plugins; base is `ruflo-core@ruflo`. Curated enable = core (reviewer), testgen (testing), security-audit (security), goals (research). Full Path-A CLI/MCP details in README; `enable` lists the curated subset, not all 33."
     },
     {
       "name": "wshobson-agents",
       "title": "wshobson/agents",
       "source": { "type": "marketplace", "repo": "wshobson/agents" },
       "install_method": "marketplace",
-      "provides": ["specialist-supply", "code-review", "testing", "debugging"],
+      "marketplace_name": "claude-code-workflows",
+      "provides": ["specialist-supply", "code-review", "testing", "security", "debugging", "docs"],
       "risk": "low",
       "overlaps_hina": false,
       "recommended": true,
-      "why": "Multi-harness catalog of specialist subagents. Pure routing supply. Safe."
+      "enable": ["comprehensive-review", "unit-testing", "security-scanning", "debugging-toolkit", "code-documentation"],
+      "why": "VERIFIED: 84 plugins. CRITICAL — repo slug is `wshobson/agents` but the marketplace NAME is `claude-code-workflows` (install keys are `<plugin>@claude-code-workflows`). The installer derives this from the manifest automatically. Curated enable covers review/test/security/debug/docs."
     },
     {
       "name": "voltagent-subagents",
       "title": "VoltAgent/awesome-claude-code-subagents",
       "source": { "type": "marketplace", "repo": "VoltAgent/awesome-claude-code-subagents" },
       "install_method": "marketplace",
-      "provides": ["specialist-supply", "code-review", "docs", "debugging"],
+      "marketplace_name": "voltagent-subagents",
+      "provides": ["specialist-supply", "code-review", "docs", "debugging", "research-planning"],
       "risk": "low",
       "overlaps_hina": false,
       "recommended": true,
-      "why": "100+ specialized subagents across dev use-cases. Broadens the route-target pool. Safe."
+      "enable": [
+        "voltagent-core-dev", "voltagent-lang", "voltagent-infra", "voltagent-qa-sec",
+        "voltagent-data-ai", "voltagent-dev-exp", "voltagent-domains", "voltagent-biz",
+        "voltagent-meta", "voltagent-research"
+      ],
+      "why": "VERIFIED + INSTALLED LIVE: 10 capability-bundle plugins (154 subagents). Install: `claude plugin marketplace add VoltAgent/awesome-claude-code-subagents` + `claude plugin install <name>@voltagent-subagents`."
+    },
+    {
+      "name": "claude-plugins-official",
+      "title": "Anthropic official plugins",
+      "source": { "type": "marketplace", "repo": "anthropics/claude-plugins-official", "verify": true },
+      "install_method": "marketplace",
+      "marketplace_name": "claude-plugins-official",
+      "provides": ["specialist-supply", "code-review", "docs"],
+      "risk": "low",
+      "overlaps_hina": false,
+      "recommended": false,
+      "why": "VERIFIED name `claude-plugins-official` (227 plugins). BUT the `marketplace add <slug>` step is NOT documented — it ships PRE-REGISTERED with Claude Code (local copy sourced from GCS, no git remote). `verify:true` so the installer does NOT try to add it by slug. Install specific plugins with `claude plugin install <plugin>@claude-plugins-official` if desired."
     },
     {
       "name": "marketingskills",
       "title": "marketingskills",
       "source": { "type": "marketplace", "repo": "coreyhaines31/marketingskills" },
       "install_method": "marketplace",
+      "marketplace_name": "marketingskills",
       "provides": ["marketing"],
       "risk": "low",
       "overlaps_hina": false,
       "recommended": false,
-      "why": "Marketing scenario coverage (copy, campaigns, positioning). Additive; install if you do marketing/GTM work."
+      "enable": ["marketing-skills"],
+      "why": "VERIFIED: marketplace name `marketingskills` (no hyphen), single plugin `marketing-skills` (WITH hyphen) = 40 marketing skills. Repo's preferred install is `npx skills add coreyhaines31/marketingskills`; marketplace form is `claude plugin install marketing-skills@marketingskills`. Optional (marketing/GTM)."
+    },
+    {
+      "name": "gstack",
+      "title": "gstack",
+      "source": { "type": "setup-script", "repo": "garrytan/gstack" },
+      "install_method": "setup-script",
+      "provides": ["design-qa", "research-planning", "orchestration"],
+      "risk": "low",
+      "overlaps_hina": false,
+      "recommended": true,
+      "install_command": "git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git ~/.claude/skills/gstack && cd ~/.claude/skills/gstack && ./setup",
+      "why": "VERIFIED: skills suite (/browse, /office-hours, /plan-ceo-review). NOT a marketplace plugin and NOT on npm — installed by git-cloning into ~/.claude/skills/gstack and running ./setup. The auto-installer reports this as manual (it only auto-runs marketplace installs); run the install_command yourself."
     },
     {
       "name": "claude-mem",
       "title": "claude-mem",
       "role": "memory-backend-candidate",
-      "source": { "type": "npm", "package": "claude-mem", "verify": true },
+      "source": { "type": "npm", "package": "claude-mem", "repo": "thedotmack/claude-mem" },
       "install_method": "npm",
       "provides": ["memory"],
       "risk": "medium",
       "overlaps_hina": true,
       "recommended": false,
-      "why": "THE single memory entry (debate winner). Auto-captures + AI-compresses observations to SQLite, injects at session start — the strongest standalone engine, hence the best candidate to ADOPT as Hina's memory backend instead of rebuilding flat-JSON memory. Conditions: (1) adopt via an adapter so Hina stays the single source of truth and the only injector; (2) do NOT run alongside Hina's own file memory; (3) verify the exact package/repo before install. Runs a background worker + hooks."
+      "install_command": "npx claude-mem install",
+      "why": "VERIFIED: npm `claude-mem` (repo thedotmack/claude-mem), the single memory entry / backend-adoption candidate. Install with `npx claude-mem install` (NOT `npm i -g claude-mem`, which skips the hooks + worker). Installs hooks + a background worker. Do NOT run alongside Hina's own file memory; adopt via an adapter."
     },
     {
       "name": "claude-code-router",
       "title": "Claude Code Router",
-      "source": { "type": "npm", "package": "@musistudio/claude-code-router", "verify": true },
+      "source": { "type": "npm", "package": "@musistudio/claude-code-router", "repo": "musistudio/claude-code-router" },
       "install_method": "npm-proxy",
       "provides": ["model-routing"],
       "risk": "high",
       "overlaps_hina": false,
       "recommended": false,
-      "why": "Proxies Claude Code to other LLM providers per request. DIFFERENT problem (model selection, not skill selection) and HIGH risk: reroutes how Claude Code connects to models and can disrupt your whole setup, including the current session. Cataloged for awareness, not for the default install."
+      "install_command": "npm install -g @musistudio/claude-code-router  # then: ccr code",
+      "why": "VERIFIED: npm `@musistudio/claude-code-router` (repo musistudio/claude-code-router), CLI `ccr`. SEPARATE INFRASTRUCTURE — a proxy that reroutes Claude Code to other model providers (DIFFERENT problem from skill routing). HIGH risk: changes how Claude Code connects to models. Requires Claude Code installed first; run via `ccr code`. Cataloged for awareness, not default install."
     }
   ]
 }
