@@ -25,6 +25,7 @@ const path = require("path");
 
 const REPO_DATA = path.join(__dirname, "..", "data", "starter-pack.json");
 const KNOWN_MKTS = path.join(os.homedir(), ".claude", "plugins", "known_marketplaces.json");
+const SETTINGS = path.join(os.homedir(), ".claude", "settings.json");
 
 function readJSON(p, fallback) {
   try {
@@ -57,6 +58,7 @@ function isPresent(entry) {
 const args = process.argv.slice(2);
 const showCommands = args.includes("--commands");
 const includeAll = args.includes("--all");
+const apply = args.includes("--apply");
 
 const entries = pack.entries.filter((e) => includeAll || e.recommended || !e.overlaps_hina);
 
@@ -120,6 +122,62 @@ if (showCommands) {
       console.log(`  npx ${s.package}`);
     }
   }
-} else {
-  console.log("\n  (run with --commands to print the exact install commands)");
+} else if (!apply) {
+  console.log("\n  (run with --commands for exact commands, or --apply to register them in settings.json)");
+}
+
+// ── --apply: the intelligent auto-install path ─────────────────────────────────
+// Claude Code has no silent "install plugin" API. The supported path is declarative:
+// write the marketplace to settings.json (extraKnownMarketplaces + enabledPlugins) and
+// Claude Code installs/enables it ON THE NEXT STARTUP. So --apply registers the missing
+// recommended marketplaces, backs up settings.json first, is idempotent, and asks the
+// user to restart. It deliberately does NOT touch the plugin cache or installed_plugins.json
+// (fragile internals); it only writes the two documented settings keys. npm-method entries
+// (claude-mem) and high-risk ones are reported, not auto-written.
+function cmdApply(toInstall) {
+  let settings = {};
+  try {
+    settings = JSON.parse(fs.readFileSync(SETTINGS, "utf8"));
+  } catch {
+    /* fresh settings */
+  }
+  fs.writeFileSync(SETTINGS + ".bak", JSON.stringify(settings, null, 2)); // backup first
+  settings.extraKnownMarketplaces = settings.extraKnownMarketplaces || {};
+  settings.enabledPlugins = settings.enabledPlugins || {};
+
+  const registered = [];
+  const skipped = [];
+  for (const e of toInstall) {
+    const s = e.source || {};
+    if (e.install_method !== "marketplace") {
+      skipped.push(`${e.title} (${e.install_method} — run manually)`);
+      continue;
+    }
+    if (s.verify || !s.repo) {
+      skipped.push(`${e.title} (repo not verified — confirm slug before shipping)`);
+      continue;
+    }
+    settings.extraKnownMarketplaces[e.name] = { repo: s.repo }; // register the marketplace
+    // enabledPlugins needs exact <plugin>@<marketplace> keys; only write them when the
+    // catalog supplies them (entry.enable), else just register so `/plugin install` works.
+    for (const key of e.enable || []) settings.enabledPlugins[key] = true;
+    registered.push(`${e.title} -> extraKnownMarketplaces[${e.name}]${(e.enable || []).length ? " + enabledPlugins" : " (register only; add 'enable' keys to auto-enable)"}`);
+  }
+
+  fs.writeFileSync(SETTINGS, JSON.stringify(settings, null, 2) + "\n");
+  console.log("\n=== --apply: wrote settings.json (backup at settings.json.bak) ===");
+  registered.forEach((r) => console.log("  + " + r));
+  if (skipped.length) {
+    console.log("\n  not auto-written:");
+    skipped.forEach((s) => console.log("  - " + s));
+  }
+  console.log("\n  >>> RESTART Claude Code to let it install the registered plugins on startup. <<<");
+}
+
+if (apply) {
+  const toInstall = pack.entries.filter(
+    (e) => e.recommended && !isPresent(e) && (includeAll || !e.overlaps_hina)
+  );
+  if (!toInstall.length) console.log("\n--apply: nothing missing to register.");
+  else cmdApply(toInstall);
 }
