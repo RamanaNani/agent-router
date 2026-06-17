@@ -32,6 +32,7 @@ MARKETPLACES=(
   "wshobson/agents=claude-code-workflows"
   "VoltAgent/awesome-claude-code-subagents=voltagent-subagents"
   "coreyhaines31/marketingskills=marketingskills"
+  "thedotmack/claude-mem=thedotmack"
 )
 
 [ "${AGENT_ROUTER_NO_AUTOINSTALL:-}" = "1" ] && exit 0

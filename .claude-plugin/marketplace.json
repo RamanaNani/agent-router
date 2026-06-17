@@ -7,13 +7,13 @@
   "metadata": {
     "description": "A meta-router that picks the best installed skill/agent for any task."
   },
-  "allowCrossMarketplaceDependenciesOn": ["ecc", "ruflo", "claude-code-workflows", "voltagent-subagents", "marketingskills"],
+  "allowCrossMarketplaceDependenciesOn": ["ecc", "ruflo", "claude-code-workflows", "voltagent-subagents", "marketingskills", "thedotmack"],
   "plugins": [
     {
       "name": "agent-router",
       "source": "./",
       "description": "Discovers every installed skill and subagent, ranks them for the task at hand, and routes to the best one.",
-      "version": "0.4.1",
+      "version": "0.4.2",
       "author": {
         "name": "Ramana Reddy",
         "email": "ramanareddy1098@outlook.com"
