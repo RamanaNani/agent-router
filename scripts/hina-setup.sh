@@ -1,51 +1,72 @@
 #!/usr/bin/env bash
-# hina-setup.sh — first-run (and post-update) auto-install of the curated starter pack.
+# hina-setup.sh — register the upstream marketplaces so agent-router's native plugin
+# `dependencies` (declared in .claude-plugin/plugin.json) resolve and install.
 #
-# Wired as agent-router's SessionStart hook (hooks/hooks.json, async). When a user installs
-# or UPDATES the agent-router plugin, the next session start runs this once and installs the
-# curated plugins via the real CLI (`claude plugin install`, driven by hina-bootstrap.js --apply).
+# WHY this exists: Claude Code auto-installs a plugin's declared `dependencies` at install
+# time — BUT "dependencies from a marketplace you have not added are left unresolved", and
+# `claude plugin marketplace add` "resolves any outstanding missing dependencies". The curated
+# specialists live in OTHER marketplaces (ecc, ruflo, wshobson=claude-code-workflows, VoltAgent),
+# which a fresh user hasn't added. So this hook's ONLY job is to add those 4 marketplaces; then
+# Claude Code's own resolver installs everything agent-router depends on. The platform does the
+# installing — this script just opens the door.
 #
-# Safety / design:
-#   - RUN-ONCE per plugin version: a version-stamped marker means it runs on fresh install AND
-#     re-runs after an update (so newly-added starter-pack plugins get installed), but not every
-#     session.
-#   - NON-BLOCKING: the install runs in the background and this script returns immediately, so it
-#     never slows session startup. Output goes to a log, never to the hook's stdout (which is
-#     JSON-gated — printing CLI output there would corrupt the session).
-#   - OPT-OUT: set AGENT_ROUTER_NO_AUTOINSTALL=1 to disable entirely.
-#   - SCOPED: hina-bootstrap.js installs only each catalog entry's curated `enable` list — never a
-#     whole marketplace — so this can't flood the user with hundreds of plugins.
+# Wired as agent-router's SessionStart hook (hooks/hooks.json, async). Runs once per plugin
+# version (re-runs after an update to pick up new dependency marketplaces). Requires Claude
+# Code >= 2.1.110 (dependency resolution). After it runs, `/reload-plugins` (or the next
+# session) activates the installed specialists.
+#
+# Safety: run-once-per-version marker; non-blocking (backgrounded); output to a log, never to
+# the hook's JSON-gated stdout; opt out with AGENT_ROUTER_NO_AUTOINSTALL=1.
 set -u
 
 DATA_DIR="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/agent-router}"
 MARKER="$DATA_DIR/.starter-pack-version"
 LOG="$DATA_DIR/starter-pack-install.log"
-BOOTSTRAP="${CLAUDE_PLUGIN_ROOT:-.}/scripts/hina-bootstrap.js"
 
-# Opt-out.
+# The upstream marketplaces agent-router's dependencies resolve against (repo slugs).
+MARKETPLACES="affaan-m/ECC ruvnet/ruflo wshobson/agents VoltAgent/awesome-claude-code-subagents"
+
 [ "${AGENT_ROUTER_NO_AUTOINSTALL:-}" = "1" ] && exit 0
-
-# Need node + the bootstrap script.
-command -v node >/dev/null 2>&1 || exit 0
-[ -f "$BOOTSTRAP" ] || exit 0
-
+command -v claude >/dev/null 2>&1 || exit 0
 mkdir -p "$DATA_DIR" 2>/dev/null || exit 0
 
-# Current plugin version (re-run when it changes = covers updates).
+# Current plugin version → re-run when it changes (covers updates).
 VERSION="$(node -e 'try{process.stdout.write(String(require(process.argv[1]).version||"0"))}catch(e){process.stdout.write("0")}' "${CLAUDE_PLUGIN_ROOT:-.}/.claude-plugin/plugin.json" 2>/dev/null || echo 0)"
-
-# Already done for this version? Skip.
 if [ -f "$MARKER" ] && [ "$(cat "$MARKER" 2>/dev/null)" = "$VERSION" ]; then
   exit 0
 fi
 
-# Install in the background, log everything, stamp the marker on completion. Detached so session
-# startup is never blocked; the hook's own stdout stays empty (clean).
+# Register the upstream marketplaces (idempotent). Adding the last one resolves agent-router's
+# now-satisfiable dependencies, so Claude Code installs the curated specialists. Backgrounded so
+# session startup is never blocked; the hook's own stdout stays empty.
 {
-  echo "=== agent-router starter-pack auto-install (v$VERSION) $(date -u +%FT%TZ) ==="
-  node "$BOOTSTRAP" --apply
+  echo "=== agent-router setup (v$VERSION) $(date -u +%FT%TZ): registering upstream marketplaces ==="
+  for repo in $MARKETPLACES; do
+    echo "--- claude plugin marketplace add $repo ---"
+    claude plugin marketplace add "$repo" --scope user 2>&1 || echo "(add failed for $repo — will retry next session)"
+  done
+  # Non-marketplace tools — CANNOT be plugin dependencies, so install via their own CLIs.
+  # OFF by default (each has a real caveat); enable per-tool with an env var:
+  #   gstack      = routable skills suite (safe). Set AGENT_ROUTER_INSTALL_GSTACK=1
+  #   claude-mem  = OWN session-start memory; CONFLICTS with Hina's memory (use as a backend,
+  #                 not alongside). Set AGENT_ROUTER_INSTALL_CLAUDE_MEM=1 only if you accept that.
+  #   router      = model proxy (reroutes ALL model calls); used via `ccr code`. Risky.
+  #                 Set AGENT_ROUTER_INSTALL_ROUTER=1.
+  if [ "${AGENT_ROUTER_INSTALL_GSTACK:-}" = "1" ] && [ ! -d "$HOME/.claude/skills/gstack" ]; then
+    echo "--- installing gstack (skills suite) ---"
+    git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git "$HOME/.claude/skills/gstack" 2>&1 \
+      && ( cd "$HOME/.claude/skills/gstack" && ./setup 2>&1 ) || echo "(gstack install failed)"
+  fi
+  if [ "${AGENT_ROUTER_INSTALL_CLAUDE_MEM:-}" = "1" ]; then
+    echo "--- installing claude-mem (NOTE: runs its own memory — don't also rely on Hina's) ---"
+    npx -y claude-mem install 2>&1 || echo "(claude-mem install failed)"
+  fi
+  if [ "${AGENT_ROUTER_INSTALL_ROUTER:-}" = "1" ]; then
+    echo "--- installing claude-code-router (use via: ccr code) ---"
+    npm install -g @musistudio/claude-code-router 2>&1 || echo "(router install failed)"
+  fi
   echo "$VERSION" > "$MARKER"
-  echo "=== done; run /reload-plugins to activate now ==="
+  echo "=== done. Claude Code resolves agent-router's dependencies from these marketplaces. Run /reload-plugins to activate. ==="
 } >>"$LOG" 2>&1 &
 
 exit 0

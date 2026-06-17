@@ -16,7 +16,3 @@ data/skills-index.json
 .claude/agent-router/
 *.log
 
-# Project Hina — kept private (the idea/plan + any future hina runtime memory)
-# until it's ready to ship. Stays on disk locally; never tracked or published.
-HINA_PLAN.md
-hina/

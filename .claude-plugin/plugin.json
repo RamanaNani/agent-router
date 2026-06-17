@@ -1,6 +1,6 @@
 {
   "name": "agent-router",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "description": "Discovers every installed skill and subagent, ranks them for the task at hand, and routes to the best one.",
   "author": {
     "name": "Ramana Reddy",
@@ -11,5 +11,28 @@
   "license": "MIT",
   "keywords": ["agents", "skills", "router", "orchestration", "dispatch"],
   "mcpServers": {},
-  "skills": ["./skills/"]
+  "skills": ["./skills/"],
+  "dependencies": [
+    { "name": "ecc", "marketplace": "ecc" },
+    { "name": "ruflo-core", "marketplace": "ruflo" },
+    { "name": "ruflo-testgen", "marketplace": "ruflo" },
+    { "name": "ruflo-security-audit", "marketplace": "ruflo" },
+    { "name": "ruflo-goals", "marketplace": "ruflo" },
+    { "name": "comprehensive-review", "marketplace": "claude-code-workflows" },
+    { "name": "unit-testing", "marketplace": "claude-code-workflows" },
+    { "name": "security-scanning", "marketplace": "claude-code-workflows" },
+    { "name": "debugging-toolkit", "marketplace": "claude-code-workflows" },
+    { "name": "code-documentation", "marketplace": "claude-code-workflows" },
+    { "name": "voltagent-core-dev", "marketplace": "voltagent-subagents" },
+    { "name": "voltagent-lang", "marketplace": "voltagent-subagents" },
+    { "name": "voltagent-infra", "marketplace": "voltagent-subagents" },
+    { "name": "voltagent-qa-sec", "marketplace": "voltagent-subagents" },
+    { "name": "voltagent-data-ai", "marketplace": "voltagent-subagents" },
+    { "name": "voltagent-dev-exp", "marketplace": "voltagent-subagents" },
+    { "name": "voltagent-domains", "marketplace": "voltagent-subagents" },
+    { "name": "voltagent-biz", "marketplace": "voltagent-subagents" },
+    { "name": "voltagent-meta", "marketplace": "voltagent-subagents" },
+    { "name": "voltagent-research", "marketplace": "voltagent-subagents" },
+    { "name": "marketing-skills", "marketplace": "marketingskills" }
+  ]
 }
