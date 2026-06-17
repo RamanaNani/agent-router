@@ -27,7 +27,6 @@ const { execSync } = require("child_process");
 
 const REPO_DATA = path.join(__dirname, "..", "data", "starter-pack.json");
 const KNOWN_MKTS = path.join(os.homedir(), ".claude", "plugins", "known_marketplaces.json");
-const SETTINGS = path.join(os.homedir(), ".claude", "settings.json");
 
 function readJSON(p, fallback) {
   try {
@@ -180,7 +179,7 @@ async function fetchManifest(repo) {
 // reports the count, never bulk-installing dozens-to-hundreds of plugins.
 function run(cmd) {
   try {
-    execSync(cmd, { stdio: "pipe" });
+    execSync(cmd, { stdio: "pipe", timeout: 120000, killSignal: "SIGTERM" });
     return { ok: true };
   } catch (e) {
     const msg = (e.stderr || e.stdout || e.message || "").toString().trim();
@@ -218,9 +217,14 @@ async function cmdApply(toInstall) {
       continue;
     }
     const manifest = await fetchManifest(s.repo);
-    // Prefer the cross-checked marketplace_name from the catalog (offline, verified) over the
-    // live manifest fetch, so a slow/failed network at install time can't break the keys.
-    const mktName = e.marketplace_name || (manifest && manifest.name) || e.name;
+    // Use the cross-checked marketplace_name (offline, verified) or the live manifest name.
+    // NEVER fall back to e.name — a wrong-but-plausible name makes every install silently fail
+    // (e.g. wshobson's name is claude-code-workflows, not wshobson-agents).
+    const mktName = e.marketplace_name || (manifest && manifest.name);
+    if (!mktName) {
+      skipped.push(`${e.title}: could not determine marketplace name (no marketplace_name + manifest unreachable)`);
+      continue;
+    }
     const names = (e.enable || []).filter(Boolean); // curated subset ONLY
     if (!names.length) {
       const count = manifest && manifest.plugins ? manifest.plugins.length : "?";
