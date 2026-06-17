@@ -49,9 +49,11 @@ function loadLastRoute() {
     if (!lines[i].trim()) continue;
     let row;
     try { row = JSON.parse(lines[i]); } catch { continue; }
-    if (row.skill === "agent-router") return { lines, idx: i, row };
+    // Rate the most recent route from either router surface — Hina logs its own
+    // rows with skill:"hina", and they must train the same shared bandit.
+    if (row.skill === "agent-router" || row.skill === "hina") return { lines, idx: i, row };
   }
-  return { err: "No agent-router decision found in the log to rate." };
+  return { err: "No agent-router/hina decision found in the log to rate." };
 }
 
 function save(lines, idx, row, rating, note) {
@@ -62,7 +64,10 @@ function save(lines, idx, row, rating, note) {
   row.outcome = outcomeFor(reward); // keep the binary field for older learn.js
   if (note) row.feedback = note;
   lines[idx] = JSON.stringify(row); // compact, matches how the skill appends rows
-  fs.writeFileSync(LOG_PATH, lines.join("\n"));
+  // Atomic rewrite: a crash mid-write must not truncate the whole decision log.
+  const tmp = LOG_PATH + ".tmp";
+  fs.writeFileSync(tmp, lines.join("\n"));
+  fs.renameSync(tmp, LOG_PATH);
   console.log(`\n  ${rating.toUpperCase().padEnd(9)} (reward ${reward})  ${row.domain || "?"}/${row.chosen || "?"}${already ? "  (re-rated)" : ""}`);
   console.log(`  task: ${row.task || "(no task)"}`);
   if (note) console.log(`  note: ${note}`);

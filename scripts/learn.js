@@ -49,7 +49,9 @@ function posteriorMean(alpha, beta) {
 }
 
 function learn() {
-  const rows = readRows().filter((r) => r.skill === "agent-router" && outcomeReward(r) !== null);
+  const rows = readRows().filter(
+    (r) => (r.skill === "agent-router" || r.skill === "hina") && outcomeReward(r) !== null
+  );
   const arms = {};
   for (const r of rows) {
     const key = `${r.domain || "unknown"} ${r.chosen || "-"}`;

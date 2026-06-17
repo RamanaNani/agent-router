@@ -1,0 +1,122 @@
+{
+  "version": 3,
+  "note": "Curated catalog of skills/agents Hina + agent-router can route to. Used by scripts/hina-bootstrap.js to (a) report a capability gap vs the local inventory and (b) emit exact install commands. Nothing is installed without explicit user consent. TWO CLASSES: (1) SPECIALIST SUITES (ecc, ruflo, gstack, llm-council, wshobson, voltagent, official, marketing) are ADDITIVE — install as many as you like; each behaves differently and more specialists = better routing, no conflict. (2) MEMORY engines are NOT additive — exactly ONE, and only as a BACKEND behind Hina (single source of truth, single session-start injection) via an adapter; never run two memory engines or one alongside Hina's own file memory. MEMORY DECISION (3-reviewer debate, 2026-06-16): claude-mem chosen as the single backend candidate over Claude-User-Memory (inert until Pinecone/Mem0 wired) and awesome-memory (a recall primitive). entries marked verify need their exact repo/package confirmed before install.",
+  "capabilities": [
+    "specialist-supply", "code-review", "testing", "security", "debugging",
+    "docs", "design-qa", "research-planning", "orchestration", "marketing",
+    "memory", "model-routing"
+  ],
+  "entries": [
+    {
+      "name": "claude-plugins-official",
+      "title": "Anthropic official plugins",
+      "source": { "type": "marketplace", "repo": "anthropics/claude-plugins-official" },
+      "install_method": "marketplace",
+      "provides": ["specialist-supply", "code-review", "docs"],
+      "risk": "low",
+      "overlaps_hina": false,
+      "recommended": true,
+      "why": "Official Anthropic plugin marketplace. Safe broad baseline — first marketplace to add for a fresh user."
+    },
+    {
+      "name": "ecc",
+      "title": "ECC (Every Commit Counts)",
+      "source": { "type": "marketplace", "repo": "affaan-m/ECC" },
+      "install_method": "marketplace",
+      "provides": ["specialist-supply", "code-review", "testing", "security", "debugging", "docs", "design-qa", "research-planning"],
+      "risk": "low",
+      "overlaps_hina": false,
+      "recommended": true,
+      "why": "Largest single suite: per-language reviewers, security-reviewer, planner, tdd-guide, build-resolvers, design tools. Broadest coverage in one install — the highest-value specialist supply."
+    },
+    {
+      "name": "ruflo",
+      "title": "Ruflo",
+      "source": { "type": "marketplace", "repo": "ruvnet/ruflo" },
+      "install_method": "marketplace",
+      "provides": ["specialist-supply", "research-planning", "testing", "security", "orchestration"],
+      "risk": "low",
+      "overlaps_hina": false,
+      "recommended": true,
+      "why": "Swarm + specialist agents: researcher, reviewer, testgen, security-audit, SPARC/workflow orchestration. Strong research + multi-agent coverage."
+    },
+    {
+      "name": "gstack",
+      "title": "gstack",
+      "source": { "type": "setup-script", "repo": "<gstack repo>", "verify": true },
+      "install_method": "setup-script",
+      "provides": ["design-qa", "research-planning", "orchestration"],
+      "risk": "low",
+      "overlaps_hina": false,
+      "recommended": true,
+      "why": "QA/design/ship + plan-review skills (plan-ceo-review, plan-eng-review, design-review, office-hours, browse). NOTE: installed via its own setup script into the skills dir, NOT a marketplace plugin — the bootstrap can't auto-detect it from known_marketplaces, and the repo slug needs verifying."
+    },
+    {
+      "name": "llm-council",
+      "title": "llm-council",
+      "source": { "type": "skill", "repo": "<llm-council source>", "verify": true },
+      "install_method": "skill",
+      "provides": ["research-planning", "orchestration"],
+      "risk": "medium",
+      "overlaps_hina": false,
+      "recommended": true,
+      "why": "Multi-model planning council: independent plans from several CLI agents, anonymized, judged + merged. Needs the council member CLIs (codex/gemini/opencode) configured to run a real cross-vendor council; degrades to fewer members otherwise. Verify source before install."
+    },
+    {
+      "name": "wshobson-agents",
+      "title": "wshobson/agents",
+      "source": { "type": "marketplace", "repo": "wshobson/agents" },
+      "install_method": "marketplace",
+      "provides": ["specialist-supply", "code-review", "testing", "debugging"],
+      "risk": "low",
+      "overlaps_hina": false,
+      "recommended": true,
+      "why": "Multi-harness catalog of specialist subagents. Pure routing supply. Safe."
+    },
+    {
+      "name": "voltagent-subagents",
+      "title": "VoltAgent/awesome-claude-code-subagents",
+      "source": { "type": "marketplace", "repo": "VoltAgent/awesome-claude-code-subagents" },
+      "install_method": "marketplace",
+      "provides": ["specialist-supply", "code-review", "docs", "debugging"],
+      "risk": "low",
+      "overlaps_hina": false,
+      "recommended": true,
+      "why": "100+ specialized subagents across dev use-cases. Broadens the route-target pool. Safe."
+    },
+    {
+      "name": "marketingskills",
+      "title": "marketingskills",
+      "source": { "type": "marketplace", "repo": "coreyhaines31/marketingskills" },
+      "install_method": "marketplace",
+      "provides": ["marketing"],
+      "risk": "low",
+      "overlaps_hina": false,
+      "recommended": false,
+      "why": "Marketing scenario coverage (copy, campaigns, positioning). Additive; install if you do marketing/GTM work."
+    },
+    {
+      "name": "claude-mem",
+      "title": "claude-mem",
+      "role": "memory-backend-candidate",
+      "source": { "type": "npm", "package": "claude-mem", "verify": true },
+      "install_method": "npm",
+      "provides": ["memory"],
+      "risk": "medium",
+      "overlaps_hina": true,
+      "recommended": false,
+      "why": "THE single memory entry (debate winner). Auto-captures + AI-compresses observations to SQLite, injects at session start — the strongest standalone engine, hence the best candidate to ADOPT as Hina's memory backend instead of rebuilding flat-JSON memory. Conditions: (1) adopt via an adapter so Hina stays the single source of truth and the only injector; (2) do NOT run alongside Hina's own file memory; (3) verify the exact package/repo before install. Runs a background worker + hooks."
+    },
+    {
+      "name": "claude-code-router",
+      "title": "Claude Code Router",
+      "source": { "type": "npm", "package": "@musistudio/claude-code-router", "verify": true },
+      "install_method": "npm-proxy",
+      "provides": ["model-routing"],
+      "risk": "high",
+      "overlaps_hina": false,
+      "recommended": false,
+      "why": "Proxies Claude Code to other LLM providers per request. DIFFERENT problem (model selection, not skill selection) and HIGH risk: reroutes how Claude Code connects to models and can disrupt your whole setup, including the current session. Cataloged for awareness, not for the default install."
+    }
+  ]
+}
