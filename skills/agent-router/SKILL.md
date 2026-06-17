@@ -139,9 +139,13 @@ real keypress widget — this one-line digit prompt is the closest equivalent.)
 ### 6. Log the decision (internal dogfooding)
 After every routing decision, append ONE JSONL line to your decision log so you
 can review and improve routing over time:
+Use the `log` subcommand — it JSON-encodes every value, so quotes / `$()` / backticks in the
+task text can't corrupt the line or inject a shell command. **Never** hand-build the JSON with
+`echo`.
 ```bash
-mkdir -p ~/.claude/agent-router/logs
-echo '{"ts":"'"$(date -u +%FT%TZ)"'","skill":"agent-router","task":"<one-line task>","domain":"<domain>","chosen":"<name>","chosen_score":<0-100>,"runner_up":"<name|->","action":"<recommended|dispatched|none>","outcome":"","feedback":""}' >> ~/.claude/agent-router/logs/decisions.jsonl
+node <scripts>/hina-memory.js log \
+  --skill agent-router --task "$TASK" --domain "$DOMAIN" \
+  --chosen "$CHOSEN" --chosen-score "$SCORE" --runner-up "$RUNNER_UP" --action "$ACTION"
 ```
 Fill the placeholders; leave `outcome`/`feedback`/`rating`/`reward` empty — they get
 filled later by the rating step (7). Misroutes and `"action":"none"` rows are the
