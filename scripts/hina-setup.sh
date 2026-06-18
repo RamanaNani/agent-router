@@ -46,6 +46,18 @@ if [ -f "$MARKER" ] && [ "$(cat "$MARKER" 2>/dev/null)" = "$VERSION" ]; then
   exit 0
 fi
 
+# --- Deploy Hina as a bare user-scope skill so it answers to /hina ---
+# Plugin skills are namespaced by Claude Code (the plugin copy would be /agent-router:hina).
+# A bare /hina requires a USER-SCOPE skill (this is exactly how gstack's /browse etc. work).
+# We copy the plugin's canonical Hina skill (assets/hina/SKILL.md — kept out of the plugin's
+# ./skills/ glob on purpose) into the user's skills dir, re-synced on every version bump
+# (version-gated above), so the user-scope copy can never drift stale from the plugin.
+HINA_SRC="${CLAUDE_PLUGIN_ROOT:-.}/assets/hina/SKILL.md"
+HINA_DEST_DIR="$CONFIG_DIR/skills/hina"
+if [ -f "$HINA_SRC" ]; then
+  mkdir -p "$HINA_DEST_DIR" 2>/dev/null && cp -f "$HINA_SRC" "$HINA_DEST_DIR/SKILL.md" 2>/dev/null
+fi
+
 # Background so session startup is never blocked; the hook's own stdout stays empty.
 {
   echo "=== agent-router setup (v$VERSION) $(date -u '+%Y-%m-%dT%H:%M:%SZ'): registering marketplaces ==="

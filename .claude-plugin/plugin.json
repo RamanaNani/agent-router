@@ -1,6 +1,6 @@
 {
   "name": "agent-router",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Discovers every installed skill and subagent, ranks them for the task at hand, and routes to the best one.",
   "author": {
     "name": "Ramana Reddy",
