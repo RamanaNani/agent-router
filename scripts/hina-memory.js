@@ -178,8 +178,12 @@ function cmdObserve(kind, text, project) {
   ensureDir(HINA_DIR);
   const row = { ts: now(), kind, text };
   if (project) row.project = project;
+  // Store a dense vector when an embed cmd is configured, so `recall` can fuse
+  // semantic similarity with lexical overlap. No cmd set → lexical-only, still works.
+  const emb = embedText(`${kind}. ${text}`);
+  if (emb) row.emb = emb;
   fs.appendFileSync(OBS_PATH, JSON.stringify(row) + "\n", { mode: FILE_MODE });
-  console.log(`observed (${kind}): ${text}`);
+  console.log(`observed (${kind}): ${text}${emb ? " [+vector]" : ""}`);
 }
 
 // Append a route-decision row to the SHARED log, safely. Hina and agent-router both
@@ -256,6 +260,87 @@ function readJSON(p) {
   }
 }
 
+// ── hybrid recall: relevant memory, not just recent ──────────────────────────
+// `show` is chronological (last N). That is NOT memory — Hina needs the
+// observations most RELEVANT to the task in hand. `recall` ranks them the way
+// build-index.js ranks skills: token-overlap lexical (always on, zero-dep) fused
+// with dense cosine over stored embeddings when AGENT_ROUTER_EMBED_CMD is set.
+const STOP = new Set(
+  "the a an and or of to in is it for on with this that be as at by from i you we".split(" ")
+);
+function tokenize(s) {
+  return (String(s).toLowerCase().match(/[a-z0-9]+/g) || []).filter(
+    (t) => t.length > 1 && !STOP.has(t)
+  );
+}
+// Reuse the build-index.js embed contract: a shell cmd that takes text on stdin
+// and prints a JSON array. Lazy-require child_process so the common paths stay dep-free.
+function embedText(text) {
+  const cmd = process.env.AGENT_ROUTER_EMBED_CMD;
+  if (!cmd) return null;
+  try {
+    const { execSync } = require("child_process");
+    const v = JSON.parse(execSync(cmd, { input: text, encoding: "utf8", timeout: 20000 }));
+    return Array.isArray(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+function cosine(a, b) {
+  if (!a || !b || a.length !== b.length) return 0;
+  let dot = 0, na = 0, nb = 0;
+  for (let i = 0; i < a.length; i++) { dot += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i]; }
+  return dot / (Math.sqrt(na) * Math.sqrt(nb) || 1);
+}
+function loadObs() {
+  let raw = "";
+  try { raw = fs.readFileSync(OBS_PATH, "utf8"); } catch { return []; }
+  return raw
+    .split("\n").map((l) => l.trim()).filter(Boolean)
+    .map((l) => { try { return JSON.parse(l); } catch { return null; } })
+    .filter(Boolean);
+}
+// Reciprocal-rank fusion (RRF) of the lexical and optional dense rankings — the
+// same fusion build-index.js uses, so memory recall and skill routing rank alike.
+function cmdRecall(query, k) {
+  if (!query) {
+    console.error('recall needs a query: hina-memory.js recall "<task or topic>" [--k 6]');
+    process.exit(1);
+  }
+  const obs = loadObs();
+  if (!obs.length) { console.log("(no observations yet — nothing to recall)"); return; }
+  const qset = new Set(tokenize(query));
+  const lex = obs
+    .map((o, i) => {
+      const toks = tokenize(o.text || "");
+      let hit = 0; for (const t of toks) if (qset.has(t)) hit++;
+      return { i, s: hit / (Math.sqrt(toks.length) || 1) };
+    })
+    .filter((r) => r.s > 0)
+    .sort((a, b) => b.s - a.s);
+  const qv = embedText(query);
+  let dense = null;
+  if (qv) {
+    const withVec = obs.map((o, i) => ({ i, emb: o.emb })).filter((x) => x.emb);
+    if (withVec.length) {
+      dense = withVec
+        .map((x) => ({ i: x.i, s: cosine(qv, x.emb) }))
+        .sort((a, b) => b.s - a.s);
+    }
+  }
+  const C = 60;
+  const fused = new Map();
+  lex.forEach((r, rank) => fused.set(r.i, (fused.get(r.i) || 0) + 1 / (C + rank)));
+  if (dense) dense.forEach((r, rank) => fused.set(r.i, (fused.get(r.i) || 0) + 1 / (C + rank)));
+  const ranked = [...fused.entries()].sort((a, b) => b[1] - a[1]).slice(0, k);
+  if (!ranked.length) { console.log(`(no observations relevant to "${query}")`); return; }
+  console.log(`=== RECALL: top ${ranked.length} for "${query}" ${dense ? "(lexical+dense)" : "(lexical)"} ===`);
+  for (const [i] of ranked) {
+    const o = obs[i];
+    console.log(`  [${o.kind}] ${o.text}${o.project ? "  · project: " + o.project : ""}`);
+  }
+}
+
 // ── arg parsing (tiny) ────────────────────────────────────────────────────────
 // existence check, not truthiness: an empty-string value is still "provided".
 function flag(args, name, def) {
@@ -298,6 +383,16 @@ switch (cmd) {
   case "learned":
     cmdLearned(flag(rest, "--domain", ""));
     break;
+  case "recall": {
+    const k = Math.min(parseInt(flag(rest, "--k", "6"), 10) || 6, 50);
+    const positional = [];
+    for (let i = 0; i < rest.length; i++) {
+      if (rest[i] === "--k") { i++; continue; }
+      positional.push(rest[i]);
+    }
+    cmdRecall(positional.join(" ").trim(), k);
+    break;
+  }
   case "path":
     console.log(HINA_DIR);
     break;

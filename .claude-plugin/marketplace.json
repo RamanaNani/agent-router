@@ -13,7 +13,7 @@
       "name": "agent-router",
       "source": "./",
       "description": "Discovers every installed skill and subagent, ranks them for the task at hand, and routes to the best one.",
-      "version": "0.4.2",
+      "version": "0.5.0",
       "author": {
         "name": "Ramana Reddy",
         "email": "ramanareddy1098@outlook.com"

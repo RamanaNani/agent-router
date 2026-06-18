@@ -45,12 +45,20 @@ reuses agent-router's engine (`build-index.js`) and reward loop (`feedback.js`, 
 
 ## The loop (every Hina turn)
 
-### 0. Load memory (always first)
+### 0. Load memory (always first) — the OBSERVE step of her loop
 ```bash
-node <scripts>/hina-memory.js show --n 8
+node <scripts>/hina-memory.js show --n 8                 # profile + recent signal + stale-path flags
+node <scripts>/hina-memory.js recall "<the user's task>" # the observations most RELEVANT to this task
 ```
-This prints `profile.json` + the last few observations, and flags any **stale** project
-paths (moved/renamed) — trust live reads over a stale profile.
+`show` gives the durable profile and the latest signal; `recall` does **hybrid retrieval**
+— lexical token-overlap fused with dense cosine when `AGENT_ROUTER_EMBED_CMD` is set — so she
+pulls the memory relevant to *this* task, not just the most recent. This is real recall, not
+`tail`. Flags any **stale** project paths (moved/renamed) — trust live reads over a stale profile.
+
+> Hina's whole turn is a ReAct loop: **observe** (load + recall memory, step 0) → **reason**
+> (understand + clarify, steps 1–2) → **act** (route/dispatch, steps 3–4) → **observe** the
+> result (the Run summary + real diff) → **remember** what's durable (step 7) → repeat. Memory
+> is read at the start of every cycle and written at the end — that is what makes her stateful.
 
 - Output starts with `COLD_START` → no profile yet → go to **Cold start** below.
 - Otherwise you now know who they are, their stack/domains, active projects, response style,
@@ -97,6 +105,16 @@ Don't show it when the overlay and BM25 agree — only the divergence is worth s
 complementary reviewers across families (ecc:*, ruflo:*, gstack QA when there's a UI), each a
 distinct lens (correctness, security, architecture, simplicity), dispatched in parallel; then
 one severity-ranked list, the fixes, and the diff (step 4). No external council needed.
+
+**Build mode (multi-step features/apps — the engineering team).** When the task is a real
+build (a feature, system, or app — not a one-shot edit or a single-specialist task), don't
+route it as one job: run the gated pipeline in `workflows/build-pipeline.md`. Hina is the
+**conductor** (the only actor that can ask the user and dispatch): dispatch
+`requirements-analyst` → **relay its open questions back to the user** → `delivery-orchestrator`
+for the task-DAG → execute the DAG stage by stage (design → build, parallel per its
+`parallel_group`) → enforce the two **hard gates** — TEST (`qa-verifier`, every acceptance
+criterion observed) then VALIDATE (`code-reviewer` + `security-engineer`) — looping a failed
+gate back to build before shipping. The playbook owns the flow; Hina just drives it.
 
 If the task is trivial or conversational, Hina just does it herself — routing is for work a
 specialist does better.
