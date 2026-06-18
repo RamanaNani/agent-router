@@ -28,6 +28,76 @@
       "score": 75,
       "source": "builtin",
       "notes": "Use to assess and raise test coverage."
+    },
+    {
+      "name": "delivery-orchestrator",
+      "type": "agent",
+      "score": 85,
+      "source": "builtin",
+      "notes": "Baseline pipeline conductor; plans the parallel/sequential dispatch for a multi-step build. Returns a plan, does not spawn subagents."
+    },
+    {
+      "name": "requirements-analyst",
+      "type": "agent",
+      "score": 80,
+      "source": "builtin",
+      "notes": "Baseline front-of-pipeline; vague ask -> testable user stories, assumptions, open questions. Read-only."
+    },
+    {
+      "name": "ux-visualizer",
+      "type": "agent",
+      "score": 80,
+      "source": "builtin",
+      "notes": "Baseline UX/visualization; Mermaid flows + per-screen 5-state specs. Produces specs/diagrams, not production code."
+    },
+    {
+      "name": "solution-architect",
+      "type": "agent",
+      "score": 82,
+      "source": "builtin",
+      "notes": "Baseline architect; requirements/visuals -> components, data model, contracts, failure modes, build order. Prefer ecc:code-architect/ecc:architect when installed. Read-only."
+    },
+    {
+      "name": "frontend-engineer",
+      "type": "agent",
+      "score": 78,
+      "source": "builtin",
+      "notes": "Baseline UI builder; framework-agnostic, detects stack. Prefer voltagent-lang:react-specialist / voltagent-core-dev:frontend-developer when installed."
+    },
+    {
+      "name": "backend-engineer",
+      "type": "agent",
+      "score": 78,
+      "source": "builtin",
+      "notes": "Baseline server-side builder; detects stack. Prefer voltagent-core-dev:backend-developer / language specialists when installed."
+    },
+    {
+      "name": "data-engineer",
+      "type": "agent",
+      "score": 78,
+      "source": "builtin",
+      "notes": "Baseline data-layer builder; schema, up/down migrations, queries, RLS. Reviewed by code-reviewer/ecc:database-reviewer. Prefer ecc:database-reviewer / voltagent-data-ai:postgres-pro when installed."
+    },
+    {
+      "name": "build-fixer",
+      "type": "agent",
+      "score": 80,
+      "source": "builtin",
+      "notes": "Baseline build/type-error resolver; minimal surgical diffs, no architectural edits. Prefer ecc:build-error-resolver / language *-build-resolver when installed."
+    },
+    {
+      "name": "security-engineer",
+      "type": "agent",
+      "score": 85,
+      "source": "builtin",
+      "notes": "Baseline required ship-gate; secrets/injection/authz/OWASP, always enforces immediate secret rotation. Prefer ecc:security-reviewer / comprehensive-review:security-auditor when installed. Read-only."
+    },
+    {
+      "name": "qa-verifier",
+      "type": "agent",
+      "score": 82,
+      "source": "builtin",
+      "notes": "Baseline verification gate; reports OBSERVED results from running real flows/tests. Prefer ecc:e2e-runner / ruflo-testgen:tester when installed."
     }
   ]
 }
