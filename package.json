@@ -1,13 +1,14 @@
 {
   "name": "claude-agent-router",
-  "version": "0.2.0",
-  "description": "A Claude Code skill + agent that discovers every installed skill and subagent, ranks them for the task at hand, and routes to the best one.",
+  "version": "0.5.2",
+  "description": "A Claude Code plugin that discovers every installed skill and subagent, ranks them for the task at hand, and routes to the best one — fronted by the Hina assistant and a self-contained build team.",
   "publishConfig": { "access": "public" },
   "bin": {
     "claude-agent-router": "scripts/install.js"
   },
   "files": [
     "skills/",
+    "assets/",
     "agents/",
     ".claude-plugin/",
     "data/registry.json",
