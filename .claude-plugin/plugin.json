@@ -1,6 +1,6 @@
 {
   "name": "agent-router",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Discovers every installed skill and subagent, ranks them for the task at hand, and routes to the best one.",
   "author": {
     "name": "Ramana Reddy",
@@ -33,7 +33,6 @@
     { "name": "voltagent-biz", "marketplace": "voltagent-subagents" },
     { "name": "voltagent-meta", "marketplace": "voltagent-subagents" },
     { "name": "voltagent-research", "marketplace": "voltagent-subagents" },
-    { "name": "marketing-skills", "marketplace": "marketingskills" },
     { "name": "claude-mem", "marketplace": "thedotmack" }
   ]
 }
