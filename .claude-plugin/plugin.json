@@ -1,6 +1,6 @@
 {
   "name": "agent-router",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "Discovers every installed skill and subagent, ranks them for the task at hand, and routes to the best one.",
   "author": {
     "name": "Ramana Reddy",
@@ -12,6 +12,21 @@
   "keywords": ["agents", "skills", "router", "orchestration", "dispatch"],
   "mcpServers": {},
   "skills": ["./skills/"],
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hina-setup.sh",
+            "async": true,
+            "timeout": 600
+          }
+        ]
+      }
+    ]
+  },
   "dependencies": [
     { "name": "ecc", "marketplace": "ecc" },
     { "name": "ruflo-core", "marketplace": "ruflo" },

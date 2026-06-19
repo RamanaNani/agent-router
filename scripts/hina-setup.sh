@@ -58,6 +58,25 @@ if [ -f "$HINA_SRC" ]; then
   mkdir -p "$HINA_DEST_DIR" 2>/dev/null && cp -f "$HINA_SRC" "$HINA_DEST_DIR/SKILL.md" 2>/dev/null
 fi
 
+# --- Deploy hina-memory.js so /hina can reach it via the plugin path ---
+# install.js handles this for npm users; the plugin path needs its own copy because
+# CLAUDE_PLUGIN_ROOT is not on PATH and scripts/hina-memory.js must live at a stable
+# location ($DATA_DIR/scripts/) regardless of where the plugin is installed.
+HINA_MEM_SRC="${CLAUDE_PLUGIN_ROOT:-.}/scripts/hina-memory.js"
+SCRIPTS_DIR="$DATA_DIR/scripts"
+if [ -f "$HINA_MEM_SRC" ]; then
+  mkdir -p "$SCRIPTS_DIR" 2>/dev/null && cp -f "$HINA_MEM_SRC" "$SCRIPTS_DIR/hina-memory.js" 2>/dev/null
+fi
+
+# --- Initialize Hina's memory store if it doesn't exist yet ---
+# Creates ~/.claude/agent-router/hina/profile.json and observations.jsonl.
+# COLD_START detection in SKILL.md triggers the onboarding questions — we just
+# ensure the directory structure exists so the script can write to it.
+HINA_PROFILE="$DATA_DIR/hina/profile.json"
+if [ ! -f "$HINA_PROFILE" ] && [ -f "$SCRIPTS_DIR/hina-memory.js" ]; then
+  node "$SCRIPTS_DIR/hina-memory.js" init 2>/dev/null || true
+fi
+
 # Background so session startup is never blocked; the hook's own stdout stays empty.
 {
   echo "=== agent-router setup (v$VERSION) $(date -u '+%Y-%m-%dT%H:%M:%SZ'): registering marketplaces ==="
