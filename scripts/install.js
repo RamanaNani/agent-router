@@ -50,7 +50,7 @@ try {
   const home = path.join(dest, "agent-router");
   const data = copyDir(path.join(root, "data"), path.join(home, "data"));
   let scripts = 0;
-  const scriptNames = ["review-logs.js", "learn.js", "feedback.js", "build-index.js", "update-check.js"];
+  const scriptNames = ["review-logs.js", "learn.js", "feedback.js", "build-index.js", "update-check.js", "hina-memory.js", "hina-bootstrap.js"];
   fs.mkdirSync(path.join(home, "scripts"), { recursive: true });
   for (const name of scriptNames) {
     const src = path.join(root, "scripts", name);
